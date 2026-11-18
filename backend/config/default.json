@@ -1,0 +1,17 @@
+{
+  "host": "127.0.0.1",
+  "port": 8080,
+  "logLevel": "info",
+  "storage": "json",
+  "dataFile": "data/grundschutz.json",
+  "frontendDir": "../frontend",
+  "publicDir": "public",
+  "authEnabled": false,
+  "backupIntervalMinutes": 0,
+  "backupDir": "data/backups",
+  "xsuaa": {
+    "xsappname": "grundschutz"
+  },
+  "backupRetention": 30,
+  "maxUploadMegabytes": 32
+}

@@ -1,0 +1,38 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <Dialog id="riskDialog" title="{i18n>createRisk}" contentWidth="30rem">
+    <content>
+      <VBox id="riskForm" class="sapUiSmallMargin">
+        <Label id="rdObjL" text="{i18n>targetObject}" labelFor="rdObj" required="true"/>
+        <Select id="rdObj" width="100%" forceSelection="true" selectedKey="{newRisk>/targetObjectId}"
+          items="{path: 'targetObjects', parameters: { $select: 'ID,name' }, templateShareable: false}">
+          <core:Item key="{ID}" text="{name}"/>
+        </Select>
+        <Label id="rdThreatL" text="{i18n>threat}" labelFor="rdThreat" required="true"/>
+        <Select id="rdThreat" width="100%" forceSelection="true" selectedKey="{newRisk>/threatCode}"
+          items="{path: '/Threats', templateShareable: false}">
+          <core:Item key="{code}" text="{code} {title}"/>
+        </Select>
+        <Label id="rdTitleL" text="{i18n>title}" labelFor="rdTitle" required="true"/>
+        <Input id="rdTitle" value="{newRisk>/title}"/>
+        <Label id="rdDescL" text="{i18n>description}" labelFor="rdDesc"/>
+        <TextArea id="rdDesc" width="100%" value="{newRisk>/description}"/>
+        <Label id="rdFreqL" text="{i18n>frequency}" labelFor="rdFreq"/>
+        <Select id="rdFreq" width="100%" selectedKey="{newRisk>/frequency}" items="{path: 'enums>/scale', templateShareable: false}">
+          <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.frequencyText'}"/>
+        </Select>
+        <Label id="rdImpactL" text="{i18n>impact}" labelFor="rdImpact"/>
+        <Select id="rdImpact" width="100%" selectedKey="{newRisk>/impact}" items="{path: 'enums>/scale', templateShareable: false}">
+          <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.impactText'}"/>
+        </Select>
+        <Label id="rdTreatL" text="{i18n>treatment}" labelFor="rdTreat"/>
+        <Select id="rdTreat" width="100%" selectedKey="{newRisk>/treatment}" items="{path: 'enums>/treatments', templateShareable: false}">
+          <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+        </Select>
+        <Label id="rdNoteL" text="{i18n>treatmentNote}" labelFor="rdNote"/>
+        <Input id="rdNote" value="{newRisk>/treatmentNote}"/>
+      </VBox>
+    </content>
+    <beginButton><Button id="rdSave" text="{i18n>create}" type="Emphasized" press=".onCreateRisk"/></beginButton>
+    <endButton><Button id="rdCancel" text="{i18n>cancel}" press=".onCloseDialog('riskDialog')"/></endButton>
+  </Dialog>
+</core:FragmentDefinition>

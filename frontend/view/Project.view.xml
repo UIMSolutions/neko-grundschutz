@@ -1,0 +1,262 @@
+<mvc:View
+  controllerName="uim.grundschutz.controller.Project"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:core="sap.ui.core"
+  xmlns:form="sap.ui.layout.form"
+  xmlns="sap.m">
+  <Page id="projectPage" title="{name}" showNavButton="true" navButtonPress=".onNavBack">
+    <headerContent>
+      <Button id="projectPrint" icon="sap-icon://print" text="{i18n>print}" press=".onPrint"/>
+      <Button id="projectExport" icon="sap-icon://download" tooltip="{i18n>exportProject}" press=".onExportProject"/>
+      <Button id="projectRefresh" icon="sap-icon://refresh" tooltip="{i18n>refresh}" press=".onRefresh"/>
+      <Button id="projectDelete" icon="sap-icon://delete" tooltip="{i18n>delete}" type="Reject" press=".onDeleteProject"/>
+    </headerContent>
+    <content>
+      <ObjectHeader id="projectHeader" title="{name}" responsive="true" backgroundDesign="Solid">
+        <attributes>
+          <ObjectAttribute id="attrScope" title="{i18n>scope}" text="{scope}"/>
+          <ObjectAttribute id="attrOwner" title="{i18n>owner}" text="{owner}"/>
+        </attributes>
+        <statuses>
+          <ObjectStatus id="stStatus" title="{i18n>status}" text="{path: 'status', formatter: '.formatter.enumText'}" state="{path: 'status', formatter: '.formatter.projectState'}"/>
+          <ObjectStatus id="stApproach" title="{i18n>approach}" text="{path: 'approach', formatter: '.formatter.enumText'}"/>
+        </statuses>
+      </ObjectHeader>
+
+      <IconTabBar id="tabs" expandable="false" select=".onTabSelect" stretchContentHeight="false" class="sapUiResponsiveContentPadding">
+        <items>
+          <!-- ======================================================= target objects -->
+          <IconTabFilter id="tabObjects" key="objects" icon="sap-icon://it-system" text="{i18n>tabObjects}">
+            <Table id="objectTable" mode="SingleSelectLeft" growing="true"
+              items="{path: 'targetObjects', parameters: { $count: true }}">
+              <headerToolbar>
+                <OverflowToolbar id="objectToolbar">
+                  <ToolbarSpacer id="objectSpacer"/>
+                  <Select id="moduleSelect" width="22rem" forceSelection="true" items="{path: '/Modules', templateShareable: false}">
+                    <core:Item key="{code}" text="{code} {title}"/>
+                  </Select>
+                  <Button id="applyModuleButton" text="{i18n>applyModule}" icon="sap-icon://add-process" press=".onApplyModule"/>
+                  <Button id="addObjectButton" text="{i18n>add}" icon="sap-icon://add" type="Emphasized" press=".onOpenObjectDialog"/>
+                  <MenuButton id="objectExportMenu" icon="sap-icon://download" tooltip="{i18n>export}">
+                    <menu>
+                      <Menu id="objectExportItems">
+                        <MenuItem id="objectExportCsv" text="{i18n>exportCsv}" press=".onExportEntity('targetObjects','csv')"/>
+                        <MenuItem id="objectExportJson" text="{i18n>exportJson}" press=".onExportEntity('targetObjects','json')"/>
+                      </Menu>
+                    </menu>
+                  </MenuButton>
+                  <Button id="objectImportButton" icon="sap-icon://upload" tooltip="{i18n>import}" press=".onImportEntity('targetObjects')"/>
+                  <Button id="deleteObjectButton" icon="sap-icon://delete" tooltip="{i18n>delete}" press=".onDeleteSelected('objectTable')"/>
+                </OverflowToolbar>
+              </headerToolbar>
+              <columns>
+                <Column id="colObjName"><Text id="colObjNameT" text="{i18n>name}"/></Column>
+                <Column id="colObjKind" minScreenWidth="Tablet" demandPopin="true"><Text id="colObjKindT" text="{i18n>kind}"/></Column>
+                <Column id="colObjC" minScreenWidth="Tablet" demandPopin="true"><Text id="colObjCT" text="{i18n>confidentiality}"/></Column>
+                <Column id="colObjI" minScreenWidth="Tablet" demandPopin="true"><Text id="colObjIT" text="{i18n>integrity}"/></Column>
+                <Column id="colObjA" minScreenWidth="Tablet" demandPopin="true"><Text id="colObjAT" text="{i18n>availability}"/></Column>
+                <Column id="colObjMax"><Text id="colObjMaxT" text="{i18n>protectionLevel}"/></Column>
+                <Column id="colObjRat" minScreenWidth="Desktop" demandPopin="true"><Text id="colObjRatT" text="{i18n>rationale}"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Input value="{name}"/>
+                    <Select forceSelection="false" selectedKey="{kind}" items="{path: 'enums>/objectKinds', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                    </Select>
+                    <Select forceSelection="false" selectedKey="{confidentiality}" items="{path: 'enums>/protectionLevels', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                    </Select>
+                    <Select forceSelection="false" selectedKey="{integrity}" items="{path: 'enums>/protectionLevels', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                    </Select>
+                    <Select forceSelection="false" selectedKey="{availability}" items="{path: 'enums>/protectionLevels', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                    </Select>
+                    <ObjectStatus text="{path: 'protectionLevel', formatter: '.formatter.enumText'}" state="{path: 'protectionLevel', formatter: '.formatter.protectionState'}"/>
+                    <Input value="{protectionRationale}"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </IconTabFilter>
+
+          <!-- ======================================================= requirements -->
+          <IconTabFilter id="tabRequirements" key="requirements" icon="sap-icon://checklist-item" text="{i18n>tabRequirements}">
+            <Table id="requirementTable" growing="true" growingThreshold="100"
+              items="{path: 'requirements', parameters: { $count: true }}">
+              <headerToolbar>
+                <OverflowToolbar id="requirementToolbar">
+                  <ToolbarSpacer id="requirementSpacer"/>
+                  <Label id="statusFilterLabel" text="{i18n>status}" labelFor="statusFilter"/>
+                  <Select id="statusFilter" change=".onStatusFilter" forceSelection="false" selectedKey="">
+                    <core:Item id="statusAll" key="" text="*"/>
+                    <core:Item id="statusOpen" key="open" text="{i18n>enum.open}"/>
+                    <core:Item id="statusYes" key="yes" text="{i18n>enum.yes}"/>
+                    <core:Item id="statusPartially" key="partially" text="{i18n>enum.partially}"/>
+                    <core:Item id="statusNo" key="no" text="{i18n>enum.no}"/>
+                    <core:Item id="statusDispensable" key="dispensable" text="{i18n>enum.dispensable}"/>
+                  </Select>
+                  <MenuButton id="requirementExportMenu" icon="sap-icon://download" tooltip="{i18n>export}">
+                    <menu>
+                      <Menu id="requirementExportItems">
+                        <MenuItem id="requirementExportCsv" text="{i18n>exportCsv}" press=".onExportEntity('requirements','csv')"/>
+                        <MenuItem id="requirementExportJson" text="{i18n>exportJson}" press=".onExportEntity('requirements','json')"/>
+                      </Menu>
+                    </menu>
+                  </MenuButton>
+                  <Button id="requirementImportButton" icon="sap-icon://upload" tooltip="{i18n>import}" press=".onImportEntity('requirements')"/>
+                </OverflowToolbar>
+              </headerToolbar>
+              <columns>
+                <Column id="colReqCode" width="30%"><Text id="colReqCodeT" text="{i18n>code}"/></Column>
+                <Column id="colReqLevel" minScreenWidth="Tablet" demandPopin="true"><Text id="colReqLevelT" text="{i18n>level}"/></Column>
+                <Column id="colReqStatus"><Text id="colReqStatusT" text="{i18n>status}"/></Column>
+                <Column id="colReqResp" minScreenWidth="Desktop" demandPopin="true"><Text id="colReqRespT" text="{i18n>responsible}"/></Column>
+                <Column id="colReqDue" minScreenWidth="Desktop" demandPopin="true"><Text id="colReqDueT" text="{i18n>dueDate}"/></Column>
+                <Column id="colReqNote" minScreenWidth="Desktop" demandPopin="true"><Text id="colReqNoteT" text="{i18n>note}"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem highlight="{path: 'status', formatter: '.formatter.implementationState'}">
+                  <cells>
+                    <ObjectIdentifier title="{code}" text="{title}"/>
+                    <Text text="{path: 'level', formatter: '.formatter.enumText'}"/>
+                    <Select forceSelection="false" selectedKey="{status}" items="{path: 'enums>/implementationStatuses', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                    </Select>
+                    <Input value="{responsible}"/>
+                    <DatePicker value="{dueDate}"/>
+                    <Input value="{note}"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </IconTabFilter>
+
+          <!-- ======================================================= risks -->
+          <IconTabFilter id="tabRisks" key="risks" icon="sap-icon://warning" text="{i18n>tabRisks}">
+            <Table id="riskTable" mode="SingleSelectLeft" growing="true"
+              items="{path: 'risks', parameters: { $count: true }}">
+              <headerToolbar>
+                <OverflowToolbar id="riskToolbar">
+                  <ToolbarSpacer id="riskSpacer"/>
+                  <Button id="addRiskButton" text="{i18n>createRisk}" icon="sap-icon://add" type="Emphasized" press=".onOpenRiskDialog"/>
+                  <MenuButton id="riskExportMenu" icon="sap-icon://download" tooltip="{i18n>export}">
+                    <menu>
+                      <Menu id="riskExportItems">
+                        <MenuItem id="riskExportCsv" text="{i18n>exportCsv}" press=".onExportEntity('risks','csv')"/>
+                        <MenuItem id="riskExportJson" text="{i18n>exportJson}" press=".onExportEntity('risks','json')"/>
+                      </Menu>
+                    </menu>
+                  </MenuButton>
+                  <Button id="riskImportButton" icon="sap-icon://upload" tooltip="{i18n>import}" press=".onImportEntity('risks')"/>
+                  <Button id="deleteRiskButton" icon="sap-icon://delete" tooltip="{i18n>delete}" press=".onDeleteSelected('riskTable')"/>
+                </OverflowToolbar>
+              </headerToolbar>
+              <columns>
+                <Column id="colRiskThreat" width="30%"><Text id="colRiskThreatT" text="{i18n>threat}"/></Column>
+                <Column id="colRiskFreq" minScreenWidth="Tablet" demandPopin="true"><Text id="colRiskFreqT" text="{i18n>frequency}"/></Column>
+                <Column id="colRiskImpact" minScreenWidth="Tablet" demandPopin="true"><Text id="colRiskImpactT" text="{i18n>impact}"/></Column>
+                <Column id="colRiskLevel"><Text id="colRiskLevelT" text="{i18n>riskLevel}"/></Column>
+                <Column id="colRiskTreat"><Text id="colRiskTreatT" text="{i18n>treatment}"/></Column>
+                <Column id="colRiskNote" minScreenWidth="Desktop" demandPopin="true"><Text id="colRiskNoteT" text="{i18n>treatmentNote}"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem highlight="{path: 'level', formatter: '.formatter.riskState'}">
+                  <cells>
+                    <ObjectIdentifier title="{threatCode} {title}" text="{description}"/>
+                    <Select forceSelection="false" selectedKey="{frequency}" items="{path: 'enums>/scale', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.frequencyText'}"/>
+                    </Select>
+                    <Select forceSelection="false" selectedKey="{impact}" items="{path: 'enums>/scale', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.impactText'}"/>
+                    </Select>
+                    <ObjectStatus text="{path: 'level', formatter: '.formatter.enumText'}" state="{path: 'level', formatter: '.formatter.riskState'}"/>
+                    <Select forceSelection="false" selectedKey="{treatment}" items="{path: 'enums>/treatments', templateShareable: false}">
+                      <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                    </Select>
+                    <Input value="{treatmentNote}"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </IconTabFilter>
+
+          <!-- ======================================================= report -->
+          <IconTabFilter id="tabReport" key="report" icon="sap-icon://business-objects-experience" text="{i18n>tabReport}">
+            <HBox id="kpiBox" wrap="Wrap" class="sapUiSmallMarginBottom">
+              <VBox id="kpiCompliance" class="gsKpi sapUiSmallMarginEnd">
+                <Label id="kpiComplianceLabel" text="{i18n>reportCompliance}"/>
+                <ObjectNumber id="kpiComplianceValue" number="{path: 'report>/complianceDegree', formatter: '.formatter.percent'}" state="Information"/>
+              </VBox>
+              <VBox id="kpiProtection" class="gsKpi sapUiSmallMarginEnd">
+                <Label id="kpiProtectionLabel" text="{i18n>reportProtection}"/>
+                <ObjectStatus id="kpiProtectionValue" text="{path: 'report>/protectionLevel', formatter: '.formatter.enumText'}" state="{path: 'report>/protectionLevel', formatter: '.formatter.protectionState'}"/>
+              </VBox>
+              <VBox id="kpiRisks" class="gsKpi sapUiSmallMarginEnd">
+                <Label id="kpiRisksLabel" text="{i18n>reportRisks}"/>
+                <ObjectNumber id="kpiRisksValue" number="{= ${report>/risksHigh} + ${report>/risksVeryHigh} }" state="Error"/>
+              </VBox>
+              <VBox id="kpiBasic" class="gsKpi">
+                <Label id="kpiBasicLabel" text="{i18n>reportBasic}"/>
+                <ObjectNumber id="kpiBasicValue" number="{report>/basicRequirementsOpen}" state="{= ${report>/basicRequirementsOpen} > 0 ? 'Warning' : 'Success' }"/>
+              </VBox>
+            </HBox>
+            <form:SimpleForm id="reportForm" editable="false" layout="ResponsiveGridLayout" labelSpanL="4" labelSpanM="4">
+              <form:content>
+                <Label id="rpC" text="{i18n>confidentiality}"/>
+                <Text id="rpCV" text="{path: 'report>/confidentiality', formatter: '.formatter.enumText'}"/>
+                <Label id="rpI" text="{i18n>integrity}"/>
+                <Text id="rpIV" text="{path: 'report>/integrity', formatter: '.formatter.enumText'}"/>
+                <Label id="rpA" text="{i18n>availability}"/>
+                <Text id="rpAV" text="{path: 'report>/availability', formatter: '.formatter.enumText'}"/>
+                <Label id="rpRA" text="{i18n>reportRiskAnalysis}"/>
+                <Text id="rpRAV" text="{path: 'report>/objectsRequiringRiskAnalysis', formatter: '.formatter.joinList'}"/>
+                <Label id="rpReq" text="{i18n>reportRequirements}"/>
+                <Text id="rpReqV" text="{report>/requirementsTotal}: {report>/requirementsFulfilled} ✓ · {report>/requirementsPartially} ◐ · {report>/requirementsNotFulfilled} ✗ · {report>/requirementsOpen} ?"/>
+                <Label id="rpUnt" text="{i18n>reportUntreated}"/>
+                <Text id="rpUntV" text="{report>/risksUntreated}"/>
+              </form:content>
+            </form:SimpleForm>
+          </IconTabFilter>
+
+          <!-- ======================================================= master data -->
+          <IconTabFilter id="tabSettings" key="settings" icon="sap-icon://edit" text="{i18n>masterData}">
+            <form:SimpleForm id="settingsForm" editable="true" layout="ResponsiveGridLayout" labelSpanL="3" labelSpanM="3">
+              <form:content>
+                <Label id="stName" text="{i18n>name}" required="true"/>
+                <Input id="stNameV" value="{name}"/>
+                <Label id="stScope" text="{i18n>scope}"/>
+                <TextArea id="stScopeV" value="{scope}" rows="2"/>
+                <Label id="stDesc" text="{i18n>description}"/>
+                <TextArea id="stDescV" value="{description}" rows="3"/>
+                <Label id="stOwner" text="{i18n>owner}"/>
+                <Input id="stOwnerV" value="{owner}"/>
+                <Label id="stApp" text="{i18n>approach}"/>
+                <Select forceSelection="false" id="stAppV" selectedKey="{approach}" items="{path: 'enums>/approaches', templateShareable: false}">
+                  <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                </Select>
+                <Label id="stStatusL" text="{i18n>status}"/>
+                <Select forceSelection="false" id="stStatusSel" selectedKey="{status}" items="{path: 'enums>/projectStatuses', templateShareable: false}">
+                  <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+                </Select>
+              </form:content>
+            </form:SimpleForm>
+          </IconTabFilter>
+        </items>
+      </IconTabBar>
+    </content>
+    <footer>
+      <OverflowToolbar id="projectFooter">
+        <Button id="messagesButton" icon="sap-icon://message-popup" type="Negative"
+          text="{= ${message>/}.length }" visible="{= ${message>/}.length > 0 }" press=".onShowMessages"/>
+        <ToolbarSpacer id="footerSpacer"/>
+      </OverflowToolbar>
+    </footer>
+    <dependents>
+      <core:Fragment fragmentName="uim.grundschutz.view.ObjectDialog" type="XML"/>
+      <core:Fragment fragmentName="uim.grundschutz.view.RiskDialog" type="XML"/>
+    </dependents>
+  </Page>
+</mvc:View>

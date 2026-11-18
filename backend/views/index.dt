@@ -1,0 +1,61 @@
+extends layout
+
+block content
+  - import uim.myfiori.presentation.web.helpers;
+  .flex.flex-wrap.items-center.justify-between.gap-4.mb-6
+    h1.text-2xl.font-bold Grundschutz-Projekte
+    label.btn.btn-primary(for="new-project") + Neues Projekt
+
+  - if (projects.length == 0)
+    .card.bg-base-100.shadow
+      .card-body
+        p Noch keine Projekte vorhanden. Legen Sie ein Projekt (Informationsverbund) an.
+
+  .grid.gap-4(class="md:grid-cols-2 xl:grid-cols-3")
+    - foreach (i, p; projects)
+      - auto r = reports[i];
+      a(class="card bg-base-100 shadow hover:shadow-lg transition", href="/web/projects/#{p.ID}")
+        .card-body
+          .flex.justify-between.items-start.gap-2
+            h2.card-title #{p.name}
+            span(class=badge(p.status)) #{de(p.status)}
+          p.text-sm.opacity-70 #{p.scope_}
+          .flex.flex-wrap.gap-2.text-sm
+            span.badge.badge-outline #{de(p.approach)}-Absicherung
+            span.badge.badge-outline #{r.targetObjectCount} Zielobjekte
+            span(class=badge(r.protectionLevel)) Schutzbedarf #{de(r.protectionLevel)}
+          .mt-2
+            .flex.justify-between.text-xs
+              span Erfüllungsgrad
+              span #{percent(r.complianceDegree)}
+            progress.progress.progress-primary.w-full(value=r.complianceDegree, max="100")
+          - if (r.risksHigh + r.risksVeryHigh > 0)
+            .text-xs.text-error #{r.risksHigh + r.risksVeryHigh} hohe/sehr hohe Risiken
+
+  input#new-project.modal-toggle(type="checkbox")
+  .modal(role="dialog")
+    .modal-box
+      h3.font-bold.text-lg.mb-4 Neues Grundschutz-Projekt
+      form.flex.flex-col.gap-3(method="post", action="/web/projects")
+        input(type="hidden", name="csrf", value=csrf)
+        label.form-control
+          span.label-text Name *
+          input.input.input-bordered(name="name", required, maxlength="255")
+        label.form-control
+          span.label-text Informationsverbund / Geltungsbereich
+          textarea.textarea.textarea-bordered(name="scope")
+        label.form-control
+          span.label-text Beschreibung
+          textarea.textarea.textarea-bordered(name="description")
+        label.form-control
+          span.label-text Verantwortlich (ISB)
+          input.input.input-bordered(name="owner")
+        label.form-control
+          span.label-text Vorgehensweise
+          select.select.select-bordered(name="approach")
+            - foreach (a; approaches)
+              option(value=a, selected=(a == "standard")) #{de(a)}-Absicherung
+        .modal-action
+          label.btn(for="new-project") Abbrechen
+          button.btn.btn-primary(type="submit") Anlegen
+    label.modal-backdrop(for="new-project") Schließen

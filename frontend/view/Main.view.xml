@@ -1,0 +1,88 @@
+<mvc:View
+  controllerName="uim.grundschutz.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:core="sap.ui.core"
+  xmlns="sap.m">
+  <Page id="mainPage" title="{i18n>mainTitle}">
+    <headerContent>
+      <Button id="importProjectButton" icon="sap-icon://upload" text="{i18n>importProject}" press=".onImportProject"/>
+      <MenuButton id="exportProjectsButton" icon="sap-icon://download" text="{i18n>export}">
+        <menu>
+          <Menu id="exportProjectsMenu">
+            <MenuItem id="exportProjectsCsv" text="{i18n>exportCsv}" press=".onExportProjects('csv')"/>
+            <MenuItem id="exportProjectsJson" text="{i18n>exportJson}" press=".onExportProjects('json')"/>
+            <MenuItem id="downloadBackup" icon="sap-icon://save" text="{i18n>downloadBackup}" press=".onDownloadBackup"/>
+          </Menu>
+        </menu>
+      </MenuButton>
+      <Button id="adminButton" icon="sap-icon://action-settings" tooltip="{i18n>administration}" press=".onOpenAdmin"/>
+      <Button id="webGuiButton" icon="sap-icon://action" tooltip="Web GUI" press=".onOpenWebGui"/>
+    </headerContent>
+    <content>
+      <Table
+        id="projectTable"
+        growing="true"
+        growingThreshold="50"
+        noDataText="{i18n>noProjects}"
+        items="{
+          path: '/Projects',
+          parameters: { $count: true },
+          sorter: { path: 'name' }
+        }">
+        <headerToolbar>
+          <OverflowToolbar id="projectToolbar">
+            <Title id="projectTableTitle" text="{i18n>mainTitle}" level="H2"/>
+            <ToolbarSpacer id="projectSpacer"/>
+            <SearchField id="projectSearch" width="16rem" placeholder="{i18n>search}" search=".onSearch" liveChange=".onSearch"/>
+            <Button id="createProjectButton" text="{i18n>createProject}" type="Emphasized" icon="sap-icon://add" press=".onOpenCreateDialog"/>
+            <Button id="refreshButton" icon="sap-icon://refresh" tooltip="{i18n>refresh}" press=".onRefresh"/>
+          </OverflowToolbar>
+        </headerToolbar>
+        <columns>
+          <Column id="colName"><Text id="colNameText" text="{i18n>name}"/></Column>
+          <Column id="colApproach" minScreenWidth="Tablet" demandPopin="true"><Text id="colApproachText" text="{i18n>approach}"/></Column>
+          <Column id="colStatus"><Text id="colStatusText" text="{i18n>status}"/></Column>
+          <Column id="colOwner" minScreenWidth="Desktop" demandPopin="true"><Text id="colOwnerText" text="{i18n>owner}"/></Column>
+          <Column id="colModified" minScreenWidth="Desktop" demandPopin="true" hAlign="End"><Text id="colModifiedText" text="{i18n>modified}"/></Column>
+        </columns>
+        <items>
+          <ColumnListItem type="Navigation" press=".onProjectPress">
+            <cells>
+              <ObjectIdentifier title="{name}" text="{scope}"/>
+              <Text text="{path: 'approach', formatter: '.formatter.enumText'}"/>
+              <ObjectStatus text="{path: 'status', formatter: '.formatter.enumText'}" state="{path: 'status', formatter: '.formatter.projectState'}"/>
+              <Text text="{owner}"/>
+              <Text text="{modifiedAt}"/>
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    </content>
+    <dependents>
+      <Dialog id="createProjectDialog" title="{i18n>createProject}" contentWidth="32rem">
+        <content>
+          <VBox id="createProjectForm" class="sapUiSmallMargin">
+            <Label id="lblName" text="{i18n>name}" labelFor="inpName" required="true"/>
+            <Input id="inpName" value="{newProject>/name}" maxLength="255"/>
+            <Label id="lblScope" text="{i18n>scope}" labelFor="inpScope"/>
+            <TextArea id="inpScope" value="{newProject>/scope}" width="100%" rows="2"/>
+            <Label id="lblDescription" text="{i18n>description}" labelFor="inpDescription"/>
+            <TextArea id="inpDescription" value="{newProject>/description}" width="100%" rows="2"/>
+            <Label id="lblOwner" text="{i18n>owner}" labelFor="inpOwner"/>
+            <Input id="inpOwner" value="{newProject>/owner}"/>
+            <Label id="lblApproach" text="{i18n>approach}" labelFor="selApproach"/>
+            <Select id="selApproach" selectedKey="{newProject>/approach}" width="100%" items="{enums>/approaches}">
+              <core:Item key="{enums>key}" text="{path: 'enums>key', formatter: '.formatter.enumText'}"/>
+            </Select>
+          </VBox>
+        </content>
+        <beginButton>
+          <Button id="createProjectSave" text="{i18n>create}" type="Emphasized" press=".onCreateProject"/>
+        </beginButton>
+        <endButton>
+          <Button id="createProjectCancel" text="{i18n>cancel}" press=".onCloseCreateDialog"/>
+        </endButton>
+      </Dialog>
+    </dependents>
+  </Page>
+</mvc:View>

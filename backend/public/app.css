@@ -1,0 +1,3 @@
+/* Small additions to daisyUI for the Grundschutz web GUI */
+.table td { vertical-align: top; }
+.collapse-title { padding-right: 3rem; }
