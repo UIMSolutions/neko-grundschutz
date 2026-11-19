@@ -30,10 +30,18 @@ struct RiskRecord {
   string treatment, treatmentNote, createdAt, modifiedAt;
 }
 
+struct UserRecord {
+  int v = schemaVersion;
+  string id, userName, displayName, email, role;
+  bool active;
+  string passwordHash, lastLoginAt, createdAt, modifiedAt;
+}
+
 /// Collection names inside the document storage.
 enum Collections : string {
   projects = "projects",
   targetObjects = "targetObjects",
   requirements = "requirements",
   risks = "risks",
+  users = "users",       // kept in a separate store (not part of data backups)
 }

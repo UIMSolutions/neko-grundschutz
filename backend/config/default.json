@@ -7,6 +7,9 @@
   "frontendDir": "../frontend",
   "publicDir": "public",
   "authEnabled": false,
+  "login": true,
+  "usersFile": "data/users.json",
+  "sessionMinutes": 480,
   "backupIntervalMinutes": 0,
   "backupDir": "data/backups",
   "xsuaa": {

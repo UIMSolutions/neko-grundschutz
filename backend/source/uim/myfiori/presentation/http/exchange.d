@@ -108,7 +108,7 @@ class DExchangeApi {
   private void guarded(alias handler, string scope_)(HTTPServerRequest req, HTTPServerResponse res) @trusted {
     res.headers["Cache-Control"] = "no-store";
     try {
-      authorize(_app.authGuard, req, scope_);
+      authorize(_app, req, scope_, res);
       ensureNotCrossSite(_app.authGuard, req);
       handler(req, res);
     } catch (Exception e) {

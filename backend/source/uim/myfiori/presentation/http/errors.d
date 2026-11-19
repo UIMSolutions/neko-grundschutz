@@ -27,6 +27,7 @@ ErrorInfo classify(Exception e) nothrow {
   if (cast(ValidationException) e) return ErrorInfo(HTTPStatus.badRequest, "ValidationFailed");
   if (cast(ConflictException) e) return ErrorInfo(HTTPStatus.conflict, "Conflict");
   if (cast(BadRequestException) e) return ErrorInfo(HTTPStatus.badRequest, "BadRequest");
+  if (cast(AuthenticationFailedException) e) return ErrorInfo(HTTPStatus.unauthorized, "Unauthorized");
   if (cast(AuthenticationException) e) return ErrorInfo(HTTPStatus.unauthorized, "Unauthorized");
   if (cast(ForbiddenException) e) return ErrorInfo(HTTPStatus.forbidden, "Forbidden");
   return ErrorInfo(HTTPStatus.internalServerError, "InternalError");

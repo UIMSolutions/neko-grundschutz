@@ -20,7 +20,11 @@ class DAuthGuard {
 
   this(AppConfig cfg) { _cfg = cfg; }
 
+  /// XSUAA bearer token authentication.
   bool enabled() const { return _cfg.authEnabled; }
+  /// Local accounts with login page and session cookie (only without XSUAA).
+  bool loginEnabled() const { return !_cfg.authEnabled && _cfg.login; }
+  int sessionMinutes() const { return _cfg.sessionMinutes; }
 
   /**
    * Authenticates an "Authorization" header value. Without authentication the local

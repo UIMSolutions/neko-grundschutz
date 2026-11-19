@@ -58,3 +58,13 @@ DRisk toEntity(RiskRecord r) {
       cast(Frequency) r.frequency, cast(Impact) r.impact, parseEnum!RiskTreatment(r.treatment),
       r.treatmentNote, parseTs(r.createdAt), parseTs(r.modifiedAt));
 }
+
+UserRecord toRecord(const DUser u) {
+  return UserRecord(schemaVersion, u.id, u.userName, u.rawDisplayName, u.email, u.role.to!string, u.active,
+      u.passwordHash, ts(u.lastLoginAt), ts(u.createdAt), ts(u.modifiedAt));
+}
+
+DUser toEntity(UserRecord r) {
+  return new DUser(r.id, r.userName, r.displayName, r.email, parseEnum!UserRole(r.role), r.active,
+      r.passwordHash, parseTs(r.lastLoginAt), parseTs(r.createdAt), parseTs(r.modifiedAt));
+}

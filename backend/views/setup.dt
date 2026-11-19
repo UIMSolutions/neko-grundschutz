@@ -1,0 +1,25 @@
+extends auth_layout
+
+block content
+  h6 Ersteinrichtung
+  p.small-text Es gibt noch kein Benutzerkonto. Legen Sie den ersten Administrator an – er kann danach weitere Benutzer verwalten.
+  form(method="post", action="/setup")
+    .field.label.border
+      input#userName(name="userName", value=userName, autocomplete="username", required, minlength="3", maxlength="64", placeholder=" ")
+      label(for="userName") Benutzername *
+    .field.label.border
+      input#displayName(name="displayName", autocomplete="name", placeholder=" ")
+      label(for="displayName") Anzeigename
+    .field.label.border
+      input#email(type="email", name="email", autocomplete="email", placeholder=" ")
+      label(for="email") E-Mail
+    .field.label.border
+      input#password(type="password", name="password", autocomplete="new-password", required, minlength="10", placeholder=" ")
+      label(for="password") Passwort * (mind. 10 Zeichen)
+    .field.label.border
+      input#password2(type="password", name="password2", autocomplete="new-password", required, minlength="10", placeholder=" ")
+      label(for="password2") Passwort wiederholen *
+    nav.right-align
+      button(type="submit")
+        i person_add
+        span Administrator anlegen

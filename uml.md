@@ -641,7 +641,7 @@ flowchart TB
     LFILE[("backend/data/grundschutz.json")]
   end
 
-  CDN["ui5.sap.com · jsDelivr<br/>(UI5, daisyUI)"]
+  CDN["ui5.sap.com · jsDelivr<br/>(UI5, Beer CSS, htmx)"]
 
   BR -- HTTPS --> AR
   AR -- "destination grundschutz-backend<br/>Bearer JWT" --> SRV

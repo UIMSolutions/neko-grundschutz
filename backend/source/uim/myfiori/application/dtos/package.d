@@ -249,3 +249,34 @@ struct RestoreReport {
   int risks;
   string[] issues;
 }
+
+// ---------------------------------------------------------------- users
+
+/// User account without credentials.
+struct UserDto {
+  string ID;
+  string userName;
+  string displayName;
+  string email;
+  string role;            // viewer | editor | admin
+  bool active;
+  string[] scopes;
+  string lastLoginAt;
+  string createdAt;
+}
+
+struct CreateUserInput {
+  string userName;
+  string displayName;
+  string email;
+  string role = "viewer";
+  string password;
+  bool active = true;
+}
+
+struct UpdateUserInput {
+  Nullable!string displayName;
+  Nullable!string email;
+  Nullable!string role;
+  Nullable!bool active;
+}

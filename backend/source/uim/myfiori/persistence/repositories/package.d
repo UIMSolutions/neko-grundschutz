@@ -88,3 +88,14 @@ class DRiskRepository : DDocumentRepository!(DRisk, RiskRecord, Collections.risk
   DRisk[] findByProject(EntityId projectId) { return where(e => e.projectId == projectId); }
   DRisk[] findByTargetObject(EntityId id) { return where(e => e.targetObjectId == id); }
 }
+
+class DUserRepository : DDocumentRepository!(DUser, UserRecord, Collections.users), IUserRepository {
+  this(IDocumentStorage storage) { super(storage); }
+
+  DUser findByUserName(string userName) {
+    foreach (u; findAll) if (u.userName == userName) return u;
+    return null;
+  }
+
+  protected override bool less(DUser a, DUser b) { return a.userName < b.userName; }
+}

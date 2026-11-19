@@ -34,3 +34,10 @@ class ConflictException : DomainException {
     super(msg, file, line);
   }
 }
+
+/// Login with wrong credentials or for a deactivated account.
+class AuthenticationFailedException : DomainException {
+  this(string msg, string file = __FILE__, size_t line = __LINE__) pure nothrow {
+    super(msg, file, line);
+  }
+}

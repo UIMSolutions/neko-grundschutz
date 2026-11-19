@@ -25,15 +25,20 @@ class DApplicationContainer {
   IReportUseCases reports;
   IExchangeService exchange;
   IBackupService backups;
+  IDocumentStorage userStorage;   // separate store: restoring a data backup never touches accounts
+  IUserUseCases users;
   DAuthGuard authGuard;
 
   this(AppConfig config) {
     this(config, config.storage == "memory"
         ? new DMemoryDocumentStorage
-        : new DJsonFileDocumentStorage(config.dataFile));
+        : new DJsonFileDocumentStorage(config.dataFile),
+        config.storage == "memory"
+        ? new DMemoryDocumentStorage
+        : new DJsonFileDocumentStorage(config.usersFile, true));
   }
 
-  this(AppConfig config, DMemoryDocumentStorage storage) {
+  this(AppConfig config, DMemoryDocumentStorage storage, DMemoryDocumentStorage userStorage = null) {
     this.config = config;
     this.storage = storage;
     audit = new DAuditLogPublisher;
@@ -53,6 +58,22 @@ class DApplicationContainer {
     reports = new DReportUseCases(projectRepo, objectRepo, requirementRepo, riskRepo, catalog);
     exchange = new DExchangeService(projects, targetObjects, requirements, risks, catalog, storage, appVersion);
     backups = new DBackupService(storage, config.backupDir, config.backupRetention, appVersion, catalog.edition);
+
+    this.userStorage = userStorage !is null ? userStorage : new DMemoryDocumentStorage;
+    users = new DUserUseCases(new DUserRepository(this.userStorage), new DPbkdf2PasswordHasher, audit);
+  }
+
+  /// Seeds an "admin" account from GS_ADMIN_PASSWORD when no account exists yet (headless setup).
+  void seedAdminFromEnvironment() {
+    import std.process : environment;
+    auto pw = environment.get("GS_ADMIN_PASSWORD", "");
+    if (pw.length == 0 || users.hasUsers) return;
+    CreateUserInput input;
+    input.userName = environment.get("GS_ADMIN_USER", "admin");
+    input.displayName = "Administrator";
+    input.role = "admin";
+    input.password = pw;
+    users.create(input);
   }
 
   /// Volatile container for tests.

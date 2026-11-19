@@ -34,6 +34,9 @@ int main(string[] argv) {
 }
 
 int runServer(DApplicationContainer app, bool openGui) @safe {
+  app.seedAdminFromEnvironment();
+  if (app.authGuard.loginEnabled && !app.users.hasUsers)
+    logInfo("No user account yet: open /setup to create the first administrator");
   auto listener = startServer(app);
   auto backups = new DBackupWorker(app.backups, app.config.backupIntervalMinutes);
   backups.start();
@@ -49,5 +52,6 @@ int runServer(DApplicationContainer app, bool openGui) @safe {
   backups.stop();
   listener.stopListening();
   app.storage.flush();
+  app.userStorage.flush();
   return code;
 }

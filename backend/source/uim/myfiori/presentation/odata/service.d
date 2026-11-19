@@ -98,7 +98,7 @@ class DODataService {
       res.headers["X-CSRF-Token"] = _csrfToken;
     try {
       auto scope_ = requiredScope(req.method.to!string);
-      authorize(_app.authGuard, req, scope_);
+      authorize(_app, req, scope_, res);
       ensureNotCrossSite(_app.authGuard, req);
       dispatch(req, res);
     } catch (Exception e) {
@@ -226,7 +226,7 @@ class DODataService {
         return writeEntity(res, HTTPStatus.ok, set.entitySet, update(set.entitySet, key, body_(req)));
       case HTTPMethod.DELETE:
         if (set.readOnly) throw new ForbiddenException(set.entitySet ~ " is read-only");
-        if (set.entitySet == "Projects") authorize(_app.authGuard, req, "Admin");
+        if (set.entitySet == "Projects") authorize(_app, req, "Admin");
         remove(set.entitySet, key);
         res.statusCode = HTTPStatus.noContent;
         res.writeVoidBody;

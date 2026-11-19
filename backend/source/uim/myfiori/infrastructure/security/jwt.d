@@ -24,6 +24,8 @@ struct Principal {
   string userName;
   string email;
   string[] scopes;      // local scope names without xsappname prefix (e.g. "Viewer")
+  string userId;        // id of the local user account ("" for XSUAA / anonymous)
+  string displayName;
 
   bool hasScope(string scope_) const @safe pure nothrow { return scopes.canFind(scope_); }
 }

@@ -49,15 +49,38 @@ string de(string value) pure nothrow {
   }
 }
 
-/// daisyUI badge class for a status/level value.
+/// Beer CSS chip classes (with status colour from app.css) for a status/level value.
 string badge(string value) pure nothrow {
   switch (value) {
-    case "yes", "low", "normal", "completed", "dispensable": return "badge badge-success";
-    case "partially", "medium", "high", "inProgress": return "badge badge-warning";
-    case "no", "veryHigh": return "badge badge-error";
-    case "archived": return "badge badge-ghost";
-    default: return "badge badge-info badge-outline";
+    case "yes", "low", "normal", "completed", "dispensable": return "chip small tag-ok";
+    case "partially", "medium", "high", "inProgress": return "chip small tag-warn";
+    case "no", "veryHigh": return "chip small tag-bad";
+    case "archived": return "chip small tag-muted";
+    default: return "chip small tag-info";
   }
+}
+
+/// Neutral chip.
+enum chip = "chip small tag-muted";
+
+/// "active" for the current navigation entry / tab.
+string activeIf(bool cond) pure nothrow { return cond ? "active" : ""; }
+
+immutable string[] userRoles = ["viewer", "editor", "admin"];
+
+string roleLabel(string role) pure nothrow {
+  switch (role) {
+    case "viewer": return "Leser";
+    case "editor": return "Bearbeiter";
+    case "admin": return "Administrator";
+    default: return role;
+  }
+}
+
+/// "2026-11-18T09:30:12.123Z" → "18.11.2026 09:30" (UTC); "–" if empty.
+string dateTime(string iso) pure nothrow {
+  if (iso.length < 16) return "–";
+  return iso[8 .. 10] ~ "." ~ iso[5 .. 7] ~ "." ~ iso[0 .. 4] ~ " " ~ iso[11 .. 16];
 }
 
 string percent(double v) { return format("%.0f %%", v); }

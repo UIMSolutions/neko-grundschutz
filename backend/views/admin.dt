@@ -3,108 +3,140 @@ extends layout
 block content
   - import uim.myfiori.presentation.web.helpers;
   - import std.format : format;
-  h1.text-2xl.font-bold.mb-1 Daten &amp; Sicherung
-  p.text-sm.opacity-70.mb-6 Speicher: #{storage}
+  h5.no-margin Daten &amp; Sicherung
+  p.small-text.muted Speicher: #{storage}
 
-  .grid.gap-6.items-start(class="lg:grid-cols-2")
+  .grid
     //- ------------------------------------------------------------ export
-    .card.bg-base-100.shadow
-      .card-body
-        h2.card-title Export
-        p.text-sm Alle Datensätze einer Entität als CSV (Excel, UTF-8) oder JSON herunterladen.
-        div
-          table.table.table-sm
+    .s12.l6
+      article.round
+        h6
+          i download
+          |  Export
+        p.small-text Alle Datensätze einer Entität als CSV (Excel, UTF-8) oder JSON herunterladen.
+        .table-wrap
+          table.stripes
             tbody
               - foreach (e; entities)
                 tr
-                  td.font-mono #{e}
-                  td.text-right
-                    a.btn.btn-xs.btn-outline.mr-1(href="/api/export/#{e}?format=csv", title="CSV mit Komma") CSV ,
-                    a.btn.btn-xs.btn-outline.mr-1(href="/api/export/#{e}?format=csv&delimiter=semicolon", title="CSV mit Semikolon (Excel DE)") CSV ;
-                    a.btn.btn-xs.btn-outline(href="/api/export/#{e}?format=json") JSON
+                  td.mono #{e}
+                  td.right-align.nowrap
+                    a.button.border.small(href="/api/export/#{e}?format=csv", hx-boost="false", title="CSV mit Komma") CSV ,
+                    a.button.border.small(href="/api/export/#{e}?format=csv&delimiter=semicolon", hx-boost="false", title="CSV mit Semikolon (Excel DE)") CSV ;
+                    a.button.border.small(href="/api/export/#{e}?format=json", hx-boost="false") JSON
 
     //- ------------------------------------------------------------ import
-    .card.bg-base-100.shadow
-      .card-body
-        h2.card-title Import
-        p.text-sm Format wird erkannt (JSON oder CSV mit , ; oder Tab). Alle Geschäftsregeln werden geprüft; bei einem Fehler wird nichts importiert.
-        form.flex.flex-col.gap-2(method="post", action="/web/import", enctype="multipart/form-data")
-          input(type="hidden", name="csrf", value=csrf)
-          .grid.grid-cols-2.gap-2
-            select.select.select-bordered.select-sm(name="entity")
-              - foreach (e; importable)
-                option(value=e) #{e}
-            select.select.select-bordered.select-sm(name="mode", title="Verhalten bei vorhandener ID")
-              option(value="create") nur neue (Fehler bei vorhandener ID)
-              option(value="upsert") neu anlegen oder aktualisieren
-              option(value="skip") vorhandene überspringen
-          input.file-input.file-input-bordered.file-input-sm(type="file", name="file", accept=".csv,.json,text/csv,application/json", required)
-          label.label.cursor-pointer.justify-start.gap-2
-            input.checkbox.checkbox-sm(type="checkbox", name="dryRun")
-            span.label-text Probelauf (nur prüfen)
-          button.btn.btn-primary.btn-sm(type="submit") Importieren
-        .divider.my-1
-        h3.font-semibold Projekt importieren
-        p.text-sm Projektdatei (Export eines Projekts inkl. Zielobjekte, Anforderungen und Risiken).
-        form.flex.flex-col.gap-2(method="post", action="/web/import-project", enctype="multipart/form-data")
-          input(type="hidden", name="csrf", value=csrf)
-          input.file-input.file-input-bordered.file-input-sm(type="file", name="file", accept=".json,application/json", required)
-          label.label.cursor-pointer.justify-start.gap-2
-            input.checkbox.checkbox-sm(type="checkbox", name="newIds")
-            span.label-text Als Kopie mit neuen IDs anlegen (z. B. aus einer Vorlage)
-          label.label.cursor-pointer.justify-start.gap-2
-            input.checkbox.checkbox-sm(type="checkbox", name="dryRun")
-            span.label-text Probelauf (nur prüfen)
-          button.btn.btn-primary.btn-sm(type="submit") Projekt importieren
+    .s12.l6
+      article.round
+        h6
+          i upload
+          |  Import
+        - if (!ctx.canEdit)
+          p.small-text.muted Import erfordert die Rolle Bearbeiter.
+        - else
+          p.small-text Format wird erkannt (JSON oder CSV mit , ; oder Tab). Alle Geschäftsregeln werden geprüft; bei einem Fehler wird nichts importiert.
+          form(method="post", action="/web/import", enctype="multipart/form-data")
+            input(type="hidden", name="csrf", value=ctx.csrf)
+            .grid.no-space
+              .s6
+                .field.label.suffix.border.small
+                  select#imp-entity(name="entity")
+                    - foreach (e; importable)
+                      option(value=e) #{e}
+                  label(for="imp-entity") Entität
+                  i arrow_drop_down
+              .s6
+                .field.label.suffix.border.small(title="Verhalten bei vorhandener ID")
+                  select#imp-mode(name="mode")
+                    option(value="create", title="Fehler bei vorhandener ID") nur neue anlegen
+                    option(value="upsert") anlegen / aktualisieren
+                    option(value="skip") vorhandene überspringen
+                  label(for="imp-mode") Modus
+                  i arrow_drop_down
+            input.file(type="file", name="file", accept=".csv,.json,text/csv,application/json", required)
+            nav
+              label.checkbox.max
+                input(type="checkbox", name="dryRun")
+                span Probelauf (nur prüfen)
+              button.small(type="submit")
+                i upload
+                span Importieren
+          hr.medium-margin
+          h6.small Projekt importieren
+          p.small-text Projektdatei (Export eines Projekts inkl. Zielobjekte, Anforderungen und Risiken).
+          form(method="post", action="/web/import-project", enctype="multipart/form-data")
+            input(type="hidden", name="csrf", value=ctx.csrf)
+            input.file(type="file", name="file", accept=".json,application/json", required)
+            p
+              label.checkbox
+                input(type="checkbox", name="newIds")
+                span Als Kopie mit neuen IDs anlegen (z. B. aus einer Vorlage)
+            nav
+              label.checkbox.max
+                input(type="checkbox", name="dryRun")
+                span Probelauf (nur prüfen)
+              button.small(type="submit")
+                i upload_file
+                span Projekt importieren
 
   //- ------------------------------------------------------------ backup & restore
-  .card.bg-base-100.shadow.mt-6
-    .card-body
-      h2.card-title Datensicherung &amp; Wiederherstellung
-      - if (!isAdmin)
-        .alert.alert-warning Backup und Restore erfordern die Rolle Administrator.
+  article.round.top-margin
+    h6
+      i backup
+      |  Datensicherung &amp; Wiederherstellung
+    - if (!ctx.isAdmin)
+      article.tertiary-container.round.no-elevate Backup und Restore erfordern die Rolle Administrator.
+    - else
+      p.small-text Eine Sicherung enthält den vollständigen Datenbestand mit Prüfsumme (SHA-256). Vor jeder Wiederherstellung wird der aktuelle Stand automatisch gesichert. Benutzerkonten sind nicht Teil der Sicherung.
+      nav.wrap
+        a.button.small(href="/api/backup", hx-boost="false")
+          i download
+          span Komplettsicherung herunterladen
+        form(method="post", action="/web/backups")
+          input(type="hidden", name="csrf", value=ctx.csrf)
+          nav.no-space
+            .field.border.small.compact
+              input(name="label", placeholder="Bezeichnung (optional)", maxlength="32")
+            button.border.small(type="submit") Sicherung auf Server erstellen
+
+      hr.medium-margin
+      h6.small Aus Datei wiederherstellen
+      form(method="post", action="/web/restore", enctype="multipart/form-data")
+        input(type="hidden", name="csrf", value=ctx.csrf)
+        input.file(type="file", name="file", accept=".json,application/json", required)
+        nav.wrap
+          label.checkbox.max
+            input(type="checkbox", name="confirm")
+            span Bestätigen: aktuellen Datenbestand ersetzen
+          button.error.small(type="submit") Prüfen / Wiederherstellen
+
+      hr.medium-margin
+      h6.small Sicherungen auf dem Server
+      - if (backups.length == 0)
+        p.small-text Keine Sicherungen vorhanden.
       - else
-        p.text-sm Eine Sicherung enthält den vollständigen Datenbestand mit Prüfsumme (SHA-256). Vor jeder Wiederherstellung wird der aktuelle Stand automatisch gesichert.
-        .flex.flex-wrap.gap-2.items-end
-          a.btn.btn-primary.btn-sm(href="/api/backup") ↓ Komplettsicherung herunterladen
-          form.flex.gap-2.items-end(method="post", action="/web/backups")
-            input(type="hidden", name="csrf", value=csrf)
-            input.input.input-bordered.input-sm(name="label", placeholder="Bezeichnung (optional)", maxlength="32")
-            button.btn.btn-outline.btn-sm(type="submit") Sicherung auf Server erstellen
-
-        .divider.my-1
-        h3.font-semibold Aus Datei wiederherstellen
-        form.flex.flex-wrap.gap-3.items-center(method="post", action="/web/restore", enctype="multipart/form-data")
-          input(type="hidden", name="csrf", value=csrf)
-          input.file-input.file-input-bordered.file-input-sm(type="file", name="file", accept=".json,application/json", required)
-          label.label.cursor-pointer.gap-2
-            input.checkbox.checkbox-sm.checkbox-error(type="checkbox", name="confirm")
-            span.label-text Bestätigen: aktuellen Datenbestand ersetzen
-          button.btn.btn-error.btn-sm(type="submit") Prüfen / Wiederherstellen
-
-        .divider.my-1
-        h3.font-semibold Sicherungen auf dem Server
-        - if (backups.length == 0)
-          p.text-sm Keine Sicherungen vorhanden.
-        - else
-          .overflow-x-auto
-            table.table.table-sm
-              thead
+        .table-wrap
+          table.stripes
+            thead
+              tr
+                th Datei
+                th Zeitpunkt
+                th.right-align Größe
+                th
+            tbody
+              - foreach (b; backups)
                 tr
-                  th Datei
-                  th Zeitpunkt
-                  th.text-right Größe
-                  th
-              tbody
-                - foreach (b; backups)
-                  tr
-                    td.font-mono.text-xs #{b.name}
-                    td.text-xs #{b.createdAt}
-                    td.text-right.text-xs #{format("%.1f KB", b.size / 1024.0)}
-                    td.text-right
-                      .flex.gap-1.justify-end.items-center
-                        a.btn.btn-xs.btn-outline(href="/api/backups/#{b.name}") ↓
-                        form.flex.gap-1.items-center(method="post", action="/web/backups/#{b.name}/restore", onsubmit="return !this.confirm.checked || confirm('Aktuellen Datenbestand durch diese Sicherung ersetzen?')")
-                          input(type="hidden", name="csrf", value=csrf)
-                          input.checkbox.checkbox-xs.checkbox-error(type="checkbox", name="confirm", title="Bestätigen")
-                          button.btn.btn-xs.btn-error(type="submit") Wiederherstellen
+                  td.mono.small-text #{b.name}
+                  td.small-text #{b.createdAt}
+                  td.right-align.small-text #{format("%.1f KB", b.size / 1024.0)}
+                  td.right-align
+                    nav.right-align.no-space
+                      a.button.circle.transparent.small(href="/api/backups/#{b.name}", hx-boost="false", title="Herunterladen")
+                        i download
+                      form(method="post", action="/web/backups/#{b.name}/restore", hx-confirm="Diese Sicherung prüfen bzw. (falls bestätigt) den aktuellen Datenbestand ersetzen?")
+                        input(type="hidden", name="csrf", value=ctx.csrf)
+                        nav.no-space
+                          label.checkbox(title="Bestätigen")
+                            input(type="checkbox", name="confirm")
+                            span
+                          button.error.small(type="submit") Wiederherstellen

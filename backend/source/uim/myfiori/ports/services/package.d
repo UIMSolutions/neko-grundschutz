@@ -53,3 +53,9 @@ interface IBackupService {
   string readBackup(string name);
   RestoreReport restoreFromFile(string name, bool dryRun = false);
 }
+
+/// Driven port: one-way password hashing (implemented in infrastructure.security).
+interface IPasswordHasher {
+  string hash(string password);
+  bool verify(string password, string encoded);
+}

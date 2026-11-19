@@ -392,7 +392,7 @@ flowchart LR
   R5 -. "VCAP_SERVICES verificationkey" .-> R4
   R5 --- R6[("R6 data file")]
   R2["R2 CLI"] --- R6
-  R1 -. "HTTPS (UI5, daisyUI CDN)" .-> CDN["ui5.sap.com / jsDelivr"]
+  R1 -. "HTTPS (UI5, Beer CSS, htmx CDN)" .-> CDN["ui5.sap.com / jsDelivr"]
 ```
 
 Local mode: R1 or the webview connects directly to R5 on `127.0.0.1:8080`, without R3 or R4.

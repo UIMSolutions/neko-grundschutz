@@ -1,0 +1,56 @@
+extends layout
+
+block content
+  - import uim.myfiori.presentation.web.helpers;
+  h5 Mein Konto
+  - if (!hasAccount)
+    article.round
+      p Angemeldet als
+        b  #{ctx.displayName}
+        | . Dieses Konto wird nicht lokal verwaltet.
+  - else
+    .grid
+      .s12.l6
+        article.round
+          h6
+            i badge
+            |  Profil
+          nav.wrap.bottom-margin
+            span(class=chip)
+              i person
+              span #{me.userName}
+            span.chip.small.tag-info #{roleLabel(me.role)}
+            span.small-text.muted Letzte Anmeldung: #{dateTime(me.lastLoginAt)}
+          form(method="post", action="/web/account")
+            input(type="hidden", name="csrf", value=ctx.csrf)
+            .field.label.border
+              input#ac-name(name="displayName", value=me.displayName == me.userName ? "" : me.displayName, autocomplete="name", placeholder=" ")
+              label(for="ac-name") Anzeigename
+            .field.label.border
+              input#ac-mail(type="email", name="email", value=me.email, autocomplete="email", placeholder=" ")
+              label(for="ac-mail") E-Mail
+            nav
+              button(type="submit")
+                i save
+                span Speichern
+      .s12.l6
+        article.round
+          h6
+            i password
+            |  Passwort ändern
+          form(method="post", action="/web/account/password")
+            input(type="hidden", name="csrf", value=ctx.csrf)
+            input.hidden(name="username", value=me.userName, autocomplete="username", hidden)
+            .field.label.border
+              input#pw-cur(type="password", name="current", autocomplete="current-password", required, placeholder=" ")
+              label(for="pw-cur") Aktuelles Passwort
+            .field.label.border
+              input#pw-new(type="password", name="password", autocomplete="new-password", required, minlength="10", placeholder=" ")
+              label(for="pw-new") Neues Passwort (mind. 10 Zeichen)
+            .field.label.border
+              input#pw-new2(type="password", name="password2", autocomplete="new-password", required, minlength="10", placeholder=" ")
+              label(for="pw-new2") Neues Passwort wiederholen
+            nav
+              button(type="submit")
+                i key
+                span Passwort ändern

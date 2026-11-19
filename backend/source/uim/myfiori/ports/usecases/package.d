@@ -47,3 +47,20 @@ interface IReportUseCases {
   /// All data of a project for printing.
   ProjectDossierDto dossier(string projectId);
 }
+
+/// Local user accounts (login of the web GUI without XSUAA).
+interface IUserUseCases {
+  /// True once at least one account exists (otherwise the first admin is set up).
+  bool hasUsers();
+  UserDto[] list();
+  UserDto get(string id);
+  UserDto findByUserName(string userName);
+  UserDto create(CreateUserInput input);
+  UserDto update(string id, UpdateUserInput input);
+  void setPassword(string id, string newPassword);
+  /// Own password change: verifies the current password first.
+  void changeOwnPassword(string id, string currentPassword, string newPassword);
+  void remove(string id);
+  /// Verifies the credentials of an active user; throws AuthenticationFailedException.
+  UserDto authenticate(string userName, string password);
+}

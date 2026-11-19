@@ -28,7 +28,10 @@ struct AppConfig {
   string dataFile = "data/grundschutz.json";
   string frontendDir = "../frontend";      // served under /ui/ for local development
   string publicDir = "public";
-  bool authEnabled = false;
+  bool authEnabled = false;                // XSUAA (bearer tokens from the approuter)
+  bool login = false;                      // local user accounts + login page (without XSUAA)
+  string usersFile = "data/users.json";    // local user accounts (separate from the business data)
+  int sessionMinutes = 480;                // idle timeout of a login session
   int backupIntervalMinutes = 0;           // 0 = disabled
   string backupDir = "data/backups";
   int backupRetention = 30;                // number of backup files kept (0 = unlimited)
@@ -61,6 +64,9 @@ void applyJson(ref AppConfig cfg, Json j) {
   if (j["backupRetention"].type == Json.Type.int_) cfg.backupRetention = j["backupRetention"].get!long.to!int;
   if (j["maxUploadMegabytes"].type == Json.Type.int_) cfg.maxUploadMegabytes = j["maxUploadMegabytes"].get!long.to!size_t;
   if (j["authEnabled"].type == Json.Type.bool_) cfg.authEnabled = j["authEnabled"].get!bool;
+  if (j["login"].type == Json.Type.bool_) cfg.login = j["login"].get!bool;
+  cfg.usersFile = s("usersFile", cfg.usersFile);
+  if (j["sessionMinutes"].type == Json.Type.int_) cfg.sessionMinutes = j["sessionMinutes"].get!long.to!int;
   if (j["backupIntervalMinutes"].type == Json.Type.int_) cfg.backupIntervalMinutes = j["backupIntervalMinutes"].get!long.to!int;
   if (j["xsuaa"].type == Json.Type.object) {
     auto x = j["xsuaa"];
@@ -78,6 +84,9 @@ void applyEnvironment(ref AppConfig cfg, string delegate(string) @safe env) {
   if (auto v = env("GS_FRONTEND_DIR")) cfg.frontendDir = v;
   if (auto v = env("GS_PUBLIC_DIR")) cfg.publicDir = v;
   if (auto v = env("GS_AUTH")) cfg.authEnabled = v.toLower == "true" || v == "1";
+  if (auto v = env("GS_LOGIN")) cfg.login = v.toLower == "true" || v == "1";
+  if (auto v = env("GS_USERS_FILE")) cfg.usersFile = v;
+  if (auto v = env("GS_SESSION_MINUTES")) cfg.sessionMinutes = v.to!int;
   if (auto v = env("GS_BACKUP_INTERVAL")) cfg.backupIntervalMinutes = v.to!int;
   if (auto v = env("GS_BACKUP_DIR")) cfg.backupDir = v;
   if (auto v = env("GS_BACKUP_RETENTION")) cfg.backupRetention = v.to!int;

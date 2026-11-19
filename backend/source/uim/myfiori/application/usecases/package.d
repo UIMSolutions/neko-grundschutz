@@ -6,3 +6,4 @@ public import uim.myfiori.application.usecases.reports;
 public import uim.myfiori.application.usecases.requirements;
 public import uim.myfiori.application.usecases.risks;
 public import uim.myfiori.application.usecases.targetobjects;
+public import uim.myfiori.application.usecases.users;

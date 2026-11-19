@@ -7,7 +7,7 @@ risk analyses per BSI-Standard 200-3) with:
 |-----------|------------|-------------|
 | **OData v4** service | vibe.d 0.10.3 (D) | `/odata/v4/grundschutz/` (`$metadata`) |
 | **Fiori app** | SAP Fiori 3 / UI5 1.120 (`sap_fiori_3`) | `/ui/index.html` (local) – `/` behind the approuter |
-| **Web GUI** | Diet templates + daisyUI (server-side rendered) | `/web` |
+| **Web GUI** | Diet templates + Beer CSS + htmx (server-side rendered, login + user management) | `/web` |
 | **Desktop webview** | web GUI in a chromeless browser window | `grundschutz gui` |
 | **CLI** | same use cases, table or JSON output | `grundschutz help` |
 | **Exchange / backup API** | file import & export, backup & restore | `/api/…` |
@@ -100,7 +100,7 @@ dub build                                   # → build/bin/grundschutz
 
 | URL | What |
 |-----|------|
-| http://127.0.0.1:8080/web | Web GUI (daisyUI) |
+| http://127.0.0.1:8080/web | Web GUI (Beer CSS + htmx); first start: `/setup` creates the first administrator |
 | http://127.0.0.1:8080/ui/index.html | Fiori 3 app (served from `../frontend`) |
 | http://127.0.0.1:8080/odata/v4/grundschutz/$metadata | OData v4 metadata |
 | http://127.0.0.1:8080/health | health check |
@@ -292,6 +292,10 @@ Precedence: `backend/config/default.json` → environment variables → `VCAP_SE
 | `dataFile` | `GS_DATA_FILE` | `data/grundschutz.json` | JSON data file, written atomically |
 | `frontendDir` | `GS_FRONTEND_DIR` | `../frontend` | Fiori app served under `/ui` |
 | `authEnabled` | `GS_AUTH` | `false` | require XSUAA JWTs (set automatically when an XSUAA is bound) |
+| `login` | `GS_LOGIN` | `true` in `default.json` | local user accounts with login page (ignored when XSUAA is active) |
+| `usersFile` | `GS_USERS_FILE` | `data/users.json` | local user accounts (file mode 0600, not part of data backups) |
+| `sessionMinutes` | `GS_SESSION_MINUTES` | `480` | idle timeout of a login session |
+| – | `GS_ADMIN_PASSWORD`, `GS_ADMIN_USER` | – | headless setup: creates this administrator (default `admin`) if no account exists |
 | `backupIntervalMinutes` | `GS_BACKUP_INTERVAL` | `0` | periodic complete backups (0 = off) |
 | `backupDir` | `GS_BACKUP_DIR` | `data/backups` | backup target |
 | `backupRetention` | `GS_BACKUP_RETENTION` | `30` | number of backup files kept (0 = unlimited) |
@@ -303,12 +307,20 @@ Precedence: `backend/config/default.json` → environment variables → `VCAP_SE
 
 ## Security
 
-- **Authentication:** XSUAA access tokens (RS256) forwarded by the approuter. They are checked against
+- **Local login (default without XSUAA):** user accounts in `data/users.json`, passwords hashed with
+  PBKDF2-HMAC-SHA256 (210,000 iterations, random salt, constant-time comparison). Sessions use an
+  `HttpOnly`, `SameSite=Strict` cookie (`Secure` behind TLS), are renewed at login (no session
+  fixation) and expire after `sessionMinutes` of inactivity. 5 failed logins lock a user name for
+  5 minutes. Roles: *Leser* (Viewer), *Bearbeiter* (Viewer + Editor), *Administrator* (all). The last
+  active administrator cannot be deleted, demoted or locked. Administrators manage accounts under
+  `/web/users`; each user changes their own password under `/web/account`. The session also
+  authenticates `/odata`, `/api` and the Fiori app under `/ui`.
+- **Authentication with XSUAA:** XSUAA access tokens (RS256) forwarded by the approuter. They are checked against
   the XSUAA `verificationkey` with OpenSSL; expiry and the `xsappname` scope prefix are validated too.
 - **Authorization:** `Viewer` for reads, `Editor` for changes, `Admin` for deleting projects. Role
   templates *Auditor*, *SecurityOfficer* and *Administrator* are defined in `approuter/xs-security.json`.
 - **CSRF:** the approuter handles CSRF for `/odata` and `/api`. The web GUI forms (including file uploads)
-  carry their own per-user token, HMAC-SHA256(secret, user).
+  carry their own per-session token, HMAC-SHA256(secret, user | session id).
 - **Cross-site protection in local mode:** without authentication, any web page could otherwise send
   writing requests to `127.0.0.1` (for example a restore). Such requests to `/odata` and `/api` are
   rejected when the browser reports a foreign `Origin` or a cross-site fetch.
@@ -317,10 +329,10 @@ Precedence: `backend/config/default.json` → environment variables → `VCAP_SE
   - restores are checksum-verified and fully validated before anything changes, with an automatic safety backup;
   - CSV exports are protected against formula injection;
   - backup file names are validated against path traversal.
-- **Local mode:** without `authEnabled` every request runs as the local principal with all scopes.
-  Bind to `127.0.0.1` only.
+- **Local mode:** with neither `authEnabled` nor `login` every request runs as the local principal with
+  all scopes. Bind to `127.0.0.1` only.
 - **Audit trail:** every change produces a domain event that is logged as `[audit] …`.
-- **Data protection:** the web GUI loads daisyUI and Tailwind from jsDelivr / cdn.tailwindcss.com, and
+- **Data protection:** the web GUI loads Beer CSS 5.0.3 and htmx 2.0.4 from jsDelivr, and
   the Fiori app loads UI5 from ui5.sap.com. For offline or air-gapped use, vendor these files into
   `backend/public/` and `frontend/`.
 

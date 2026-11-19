@@ -29,3 +29,8 @@ interface IRiskRepository : IRepository!DRisk {
   DRisk[] findByProject(EntityId projectId);
   DRisk[] findByTargetObject(EntityId targetObjectId);
 }
+
+interface IUserRepository : IRepository!DUser {
+  /// Returns null if no user with this (normalised) login name exists.
+  DUser findByUserName(string userName);
+}

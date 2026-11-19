@@ -23,7 +23,7 @@ URLRouter buildRouter(DApplicationContainer app) {
     auto j = Json.emptyObject;
     j["status"] = "UP";
     j["storage"] = app.storage.describe;
-    j["auth"] = app.config.authEnabled;
+    j["auth"] = app.config.authEnabled ? "xsuaa" : app.authGuard.loginEnabled ? "login" : "none";
     res.writeJsonBody(j);
   });
 
@@ -39,6 +39,14 @@ URLRouter buildRouter(DApplicationContainer app) {
   if (app.config.frontendDir.exists) {
     auto ui = new HTTPFileServerSettings("/ui");
     router.get("/ui", (HTTPServerRequest req, HTTPServerResponse res) @safe { res.redirect("/ui/index.html"); });
+    // with local login the Fiori app is only delivered to logged-in users
+    if (app.authGuard.loginEnabled)
+      router.get("/ui/*", (HTTPServerRequest req, HTTPServerResponse res) @safe {
+        import uim.myfiori.presentation.http.auth : sessionPrincipal;
+        import vibe.textfilter.urlencode : urlEncode;
+        if (sessionPrincipal(app, req, res).userName.length == 0)
+          res.redirect("/login?next=" ~ urlEncode(req.requestURI));
+      });
     router.get("/ui/*", serveStaticFiles(app.config.frontendDir ~ "/", ui));
   }
   return router;
@@ -51,12 +59,16 @@ HTTPListener startServer(DApplicationContainer app) {
   settings.bindAddresses = [app.config.host];
   settings.serverString = "grundschutz";
   settings.maxRequestSize = app.config.maxUploadMegabytes * 1024 * 1024;
+  // login sessions (HttpOnly, SameSite=Strict; Secure when served via TLS)
+  settings.sessionStore = new MemorySessionStore;
+  settings.sessionIdCookie = "gs.session";
   settings.errorPageHandler = (HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) @safe {
     res.writeBody("Error " ~ () @trusted { import std.conv : to; return error.code.to!string; }() ~ ": " ~ error.message, "text/plain");
   };
   auto listener = listenHTTP(settings, buildRouter(app));
   logInfo("Grundschutz backend listening on http://%s:%d (storage: %s, auth: %s)",
-      app.config.host, app.config.port, app.storage.describe, app.config.authEnabled);
+      app.config.host, app.config.port, app.storage.describe,
+      app.config.authEnabled ? "xsuaa" : app.authGuard.loginEnabled ? "login" : "none");
   logInfo("  Web GUI : http://%s:%d/web", app.config.host, app.config.port);
   logInfo("  OData v4: http://%s:%d/odata/v4/grundschutz/$metadata", app.config.host, app.config.port);
   logInfo("  Fiori   : http://%s:%d/ui/index.html", app.config.host, app.config.port);

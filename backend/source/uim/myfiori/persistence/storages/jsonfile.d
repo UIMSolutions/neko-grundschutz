@@ -13,9 +13,12 @@ import uim.myfiori.persistence.storages.memory;
 
 class DJsonFileDocumentStorage : DMemoryDocumentStorage {
   private string _path;
+  private bool _private;
 
-  this(string path) {
+  /// privateFile: restrict the file to the owner (0600 on POSIX), e.g. for credentials.
+  this(string path, bool privateFile = false) {
     _path = path;
+    _private = privateFile;
     load();
   }
 
@@ -33,6 +36,10 @@ class DJsonFileDocumentStorage : DMemoryDocumentStorage {
     if (dir.length && !dir.exists) mkdirRecurse(dir);
     auto tmp = _path ~ ".tmp";
     write(tmp, root.toPrettyString);
+    version (Posix) if (_private) () @trusted {
+      import std.file : setAttributes;
+      setAttributes(tmp, 0b110_000_000);   // 0600
+    }();
     rename(tmp, _path);
   }
 
