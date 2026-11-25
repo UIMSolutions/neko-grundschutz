@@ -1,0 +1,26 @@
+{
+  "name": "grundschutz",
+  "description": "BSI IT-Grundschutz project management – vibe.d backend (OData v4, web GUI, CLI)",
+  "license": "Apache-2.0",
+  "targetType": "executable",
+  "targetName": "grundschutz",
+  "targetPath": "build/bin",
+  "sourcePaths": ["source"],
+  "importPaths": ["source"],
+  "stringImportPaths": ["views"],
+  "dependencies": {
+    "vibe-d": "~>0.10.3",
+    "openssl": "~>3.4.0"
+  },
+  "subConfigurations": { "openssl": "library-autodetect" },
+  "configurations": [
+    { "name": "application" },
+    {
+      "name": "unittest",
+      "targetName": "grundschutz-test",
+      "sourcePaths": ["source", "tests"],
+      "importPaths": ["source", "tests"],
+      "versions": ["GrundschutzUnittest"]
+    }
+  ]
+}

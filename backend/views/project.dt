@@ -1,0 +1,385 @@
+extends layout
+
+block content
+  - import uim.myfiori.presentation.web.helpers;
+  - import std.array : join;
+  - import std.conv : to;
+  nav.small-text
+    a.link(href="/web") Projekte
+    i.small chevron_right
+    span #{project.name}
+  nav.wrap.bottom-margin
+    .max
+      h5.no-margin #{project.name}
+      p.small-text.muted.no-margin #{project.scope_}
+    span(class=badge(project.status)) #{de(project.status)}
+    span(class=chip) #{de(project.approach)}-Absicherung
+    a.button.border.small(href="/web/projects/#{project.ID}/print", target="_blank", hx-boost="false")
+      i print
+      span Drucken
+    a.button.border.small(href="/api/projects/#{project.ID}/export", hx-boost="false")
+      i download
+      span Exportieren
+
+  .grid
+    .s12.m6.l3
+      article.round
+        .small-text.muted Zielobjekte
+        .stat-value #{report.targetObjectCount}
+        .small-text #{report.objectsRequiringRiskAnalysis.length} mit Risikoanalyse-Bedarf
+    .s12.m6.l3
+      article.round
+        .small-text.muted Schutzbedarf (Max.)
+        .stat-value #{de(report.protectionLevel)}
+        .small-text V #{de(report.confidentiality)} · I #{de(report.integrity)} · A #{de(report.availability)}
+    .s12.m6.l3
+      article.round
+        .small-text.muted Erfüllungsgrad
+        .stat-value #{percent(report.complianceDegree)}
+        .small-text #{report.requirementsFulfilled}/#{report.requirementsTotal} erfüllt · #{report.basicRequirementsOpen} Basis offen
+    .s12.m6.l3
+      article.round
+        .small-text.muted Risiken
+        .stat-value #{report.risksTotal}
+        .small-text.error-text #{report.risksHigh + report.risksVeryHigh} hoch/sehr hoch · #{report.risksUntreated} unbehandelt
+
+  .tabs.left-align.top-margin.bottom-margin(role="tablist")
+    a(class=activeIf(tab == "objects"), href="?tab=objects", role="tab")
+      i category
+      span Zielobjekte
+    a(class=activeIf(tab == "requirements"), href="?tab=requirements", role="tab")
+      i checklist
+      span Grundschutz-Check
+    a(class=activeIf(tab == "risks"), href="?tab=risks", role="tab")
+      i warning
+      span Risikoanalyse
+    a(class=activeIf(tab == "report"), href="?tab=report", role="tab")
+      i summarize
+      span Bericht
+    - if (ctx.canEdit)
+      a(class=activeIf(tab == "settings"), href="?tab=settings", role="tab")
+        i settings
+        span Einstellungen
+
+  //- ------------------------------------------------------------ target objects
+  - if (tab == "objects")
+    .grid
+      div(class=ctx.canEdit ? "s12 l8" : "s12")
+        - if (objects.length == 0)
+          article.round Noch keine Zielobjekte modelliert (Strukturanalyse).
+        - foreach (o; objects)
+          article.round.no-padding
+            details
+              summary.padding
+                nav.wrap
+                  span.bold #{o.name}
+                  span(class=chip) #{de(o.kind)}
+                  span(class=badge(o.confidentiality)) V: #{de(o.confidentiality)}
+                  span(class=badge(o.integrity)) I: #{de(o.integrity)}
+                  span(class=badge(o.availability)) A: #{de(o.availability)}
+                  - if (o.requiresRiskAnalysis)
+                    span.chip.small.tag-bad Risikoanalyse
+                  .max
+                  i.expand-icon expand_more
+              .padding
+                - if (o.description.length)
+                  p.small-text #{o.description}
+                - if (!ctx.canEdit)
+                  p.small-text
+                    b Begründung:
+                    |  #{o.protectionRationale}
+                - else
+                  form(method="post", action="/web/objects/#{o.ID}")
+                    input(type="hidden", name="csrf", value=ctx.csrf)
+                    input(type="hidden", name="tab", value="objects")
+                    .grid.no-space
+                      - foreach (field; ["confidentiality", "integrity", "availability"])
+                        - auto current = field == "confidentiality" ? o.confidentiality : field == "integrity" ? o.integrity : o.availability;
+                        .s12.m4
+                          .field.label.suffix.border.small
+                            select(id="#{o.ID}-#{field}", name=field)
+                              - foreach (l; protectionLevels)
+                                option(value=l, selected=(l == current)) #{de(l)}
+                            label(for="#{o.ID}-#{field}")= ciaLabel(field)
+                            i arrow_drop_down
+                    .field.label.border.textarea.small
+                      textarea(id="#{o.ID}-rationale", name="protectionRationale", placeholder=" ")= o.protectionRationale
+                      label(for="#{o.ID}-rationale") Begründung der Schutzbedarfsfeststellung
+                    nav
+                      button.small(type="submit")
+                        i save
+                        span Schutzbedarf speichern
+                  hr.medium-margin
+                  nav.wrap
+                    form.max(method="post", action="/web/objects/#{o.ID}/modules")
+                      input(type="hidden", name="csrf", value=ctx.csrf)
+                      input(type="hidden", name="tab", value="objects")
+                      nav.no-space
+                        .field.label.suffix.border.small.compact.max
+                          select(id="#{o.ID}-module", name="moduleCode")
+                            - foreach (m; modules)
+                              option(value=m.code) #{m.code} #{m.title}
+                          label(for="#{o.ID}-module") Baustein modellieren
+                          i arrow_drop_down
+                        button.secondary.small(type="submit") Anwenden
+                    form(method="post", action="/web/objects/#{o.ID}/delete", hx-confirm="Zielobjekt „#{o.name}“ inkl. Anforderungen und Risiken löschen?")
+                      input(type="hidden", name="csrf", value=ctx.csrf)
+                      input(type="hidden", name="tab", value="objects")
+                      button.border.error-text.small(type="submit")
+                        i delete
+                        span Löschen
+      - if (ctx.canEdit)
+        .s12.l4
+          article.round
+            h6 Neues Zielobjekt
+            form(method="post", action="/web/projects/#{project.ID}/objects")
+              input(type="hidden", name="csrf", value=ctx.csrf)
+              input(type="hidden", name="tab", value="objects")
+              .field.label.border.small
+                input#no-name(name="name", required, placeholder=" ")
+                label(for="no-name") Name *
+              .field.label.suffix.border.small
+                select#no-kind(name="kind")
+                  - foreach (k; objectKinds)
+                    option(value=k, selected=(k == "itSystem")) #{de(k)}
+                label(for="no-kind") Art
+                i arrow_drop_down
+              .field.label.border.textarea.small
+                textarea#no-desc(name="description", placeholder=" ")
+                label(for="no-desc") Beschreibung
+              .grid.no-space
+                - foreach (field; ["confidentiality", "integrity", "availability"])
+                  .s4
+                    .field.label.suffix.border.small(title=ciaLabel(field))
+                      select(id="no-#{field}", name=field)
+                        - foreach (l; protectionLevels)
+                          option(value=l) #{de(l)}
+                      label(for="no-#{field}")= ciaShort(field)
+                      i arrow_drop_down
+              .field.label.border.textarea.small
+                textarea#no-rat(name="protectionRationale", placeholder=" ")
+                label(for="no-rat") Begründung (Pflicht bei Schutzbedarf > normal)
+              nav.right-align
+                button.small(type="submit")
+                  i add
+                  span Anlegen
+
+  //- ------------------------------------------------------------ requirements
+  - if (tab == "requirements")
+    - if (requirements.length == 0)
+      article.round Noch keine Anforderungen. Wenden Sie im Reiter „Zielobjekte“ Bausteine an.
+    - else
+      article.round.no-padding
+        .table-wrap
+          table.stripes
+            thead
+              tr
+                th Anforderung
+                th Zielobjekt
+                th Art
+                th Umsetzung
+            tbody
+              - foreach (r; requirements)
+                tr
+                  td
+                    .mono.small-text #{r.code}
+                    div #{r.title}
+                  td.nowrap= objectNames.get(r.targetObjectId, "?")
+                  td
+                    span(class=badge(r.level)) #{de(r.level)}
+                  td
+                    - if (!ctx.canEdit)
+                      span(class=badge(r.status)) #{de(r.status)}
+                      .small-text #{r.responsible} #{r.dueDate}
+                      .small-text.muted #{r.note}
+                    - else
+                      form(method="post", action="/web/requirements/#{r.ID}", hx-post="/web/requirements/#{r.ID}", hx-swap="none", hx-trigger="change delay:300ms, submit")
+                        input(type="hidden", name="csrf", value=ctx.csrf)
+                        input(type="hidden", name="tab", value="requirements")
+                        input(type="hidden", name="inline", value="1")
+                        nav.wrap.no-space
+                          .field.suffix.border.small.compact
+                            select(name="status", title="Umsetzungsstatus")
+                              - foreach (s; implementationStatuses)
+                                option(value=s, selected=(s == r.status)) #{de(s)}
+                            i arrow_drop_down
+                          .field.border.small.compact
+                            input(name="responsible", value=r.responsible, placeholder="verantwortlich")
+                          .field.border.small.compact
+                            input(type="date", name="dueDate", value=r.dueDate, title="Termin")
+                          .field.border.small.compact.max
+                            input(name="note", value=r.note, placeholder="Begründung / Umsetzung")
+                          i.htmx-indicator progress_activity
+
+  //- ------------------------------------------------------------ risks
+  - if (tab == "risks")
+    .grid
+      div(class=ctx.canEdit && objects.length ? "s12 l8" : "s12")
+        article.round.no-padding
+          - if (risks.length == 0)
+            p.padding.small-text Keine Risiken erfasst. Für Zielobjekte mit erhöhtem Schutzbedarf ist eine Risikoanalyse nach BSI 200-3 erforderlich.
+          - else
+            .table-wrap
+              table.stripes
+                thead
+                  tr
+                    th Gefährdung
+                    th Zielobjekt
+                    th Bewertung
+                    th Behandlung
+                tbody
+                  - foreach (k; risks)
+                    tr
+                      td
+                        .mono.small-text #{k.threatCode}
+                        div #{k.title}
+                        .small-text.muted #{k.description}
+                      td= objectNames.get(k.targetObjectId, "?")
+                      td
+                        span(class=badge(k.level)) #{de(k.level)}
+                        .small-text #{frequencyLabel(k.frequency)} / #{impactLabel(k.impact)}
+                      td
+                        - if (!ctx.canEdit)
+                          span(class=chip) #{de(k.treatment)}
+                          .small-text.muted #{k.treatmentNote}
+                        - else
+                          form(method="post", action="/web/risks/#{k.ID}", hx-post="/web/risks/#{k.ID}", hx-swap="none", hx-trigger="change delay:300ms, submit")
+                            input(type="hidden", name="csrf", value=ctx.csrf)
+                            input(type="hidden", name="tab", value="risks")
+                            input(type="hidden", name="inline", value="1")
+                            .field.suffix.border.small.compact
+                              select(name="treatment", title="Risikobehandlung")
+                                - foreach (t; treatments)
+                                  option(value=t, selected=(t == k.treatment)) #{de(t)}
+                              i arrow_drop_down
+                            .field.border.small.compact
+                              input(name="treatmentNote", value=k.treatmentNote, placeholder="Begründung / Maßnahme")
+      - if (ctx.canEdit && objects.length)
+        .s12.l4
+          article.round
+            h6 Risiko erfassen
+            form(method="post", action="/web/projects/#{project.ID}/risks")
+              input(type="hidden", name="csrf", value=ctx.csrf)
+              input(type="hidden", name="tab", value="risks")
+              .field.label.suffix.border.small
+                select#nr-obj(name="targetObjectId")
+                  - foreach (o; objects)
+                    option(value=o.ID) #{o.name}
+                label(for="nr-obj") Zielobjekt
+                i arrow_drop_down
+              .field.label.suffix.border.small
+                select#nr-threat(name="threatCode")
+                  - foreach (t; threats)
+                    option(value=t.code) #{t.code} #{t.title}
+                label(for="nr-threat") Gefährdung
+                i arrow_drop_down
+              .field.label.border.small
+                input#nr-title(name="title", required, placeholder=" ")
+                label(for="nr-title") Titel *
+              .field.label.border.textarea.small
+                textarea#nr-desc(name="description", placeholder=" ")
+                label(for="nr-desc") Szenario
+              .field.label.suffix.border.small
+                select#nr-freq(name="frequency")
+                  - foreach (v; 1 .. 5)
+                    option(value=v) #{v} – #{frequencyLabel(v)}
+                label(for="nr-freq") Eintrittshäufigkeit
+                i arrow_drop_down
+              .field.label.suffix.border.small
+                select#nr-impact(name="impact")
+                  - foreach (v; 1 .. 5)
+                    option(value=v) #{v} – #{impactLabel(v)}
+                label(for="nr-impact") Schadenshöhe
+                i arrow_drop_down
+              .field.label.suffix.border.small
+                select#nr-treat(name="treatment")
+                  - foreach (t; treatments)
+                    option(value=t) #{de(t)}
+                label(for="nr-treat") Behandlung
+                i arrow_drop_down
+              .field.label.border.small
+                input#nr-note(name="treatmentNote", placeholder=" ")
+                label(for="nr-note") Begründung (Pflicht bei Akzeptanz hoher Risiken)
+              nav.right-align
+                button.small(type="submit")
+                  i add
+                  span Erfassen
+      - else if (ctx.canEdit)
+        .s12
+          p.small-text.muted Bitte zuerst Zielobjekte anlegen.
+
+  //- ------------------------------------------------------------ report
+  - if (tab == "report")
+    article.round
+      h6 Sicherheitskonzept – Kurzbericht
+      .table-wrap
+        table.stripes
+          tbody
+            tr
+              th.nowrap Vorgehensweise
+              td #{de(project.approach)}-Absicherung
+            tr
+              th Verantwortlich
+              td #{project.owner}
+            tr
+              th Schutzbedarf (Maximumprinzip)
+              td Vertraulichkeit #{de(report.confidentiality)}, Integrität #{de(report.integrity)}, Verfügbarkeit #{de(report.availability)}
+            tr
+              th Risikoanalyse erforderlich für
+              td= report.objectsRequiringRiskAnalysis.length ? report.objectsRequiringRiskAnalysis.join(", ") : "–"
+            tr
+              th Anforderungen (relevant)
+              td #{report.requirementsTotal}: #{report.requirementsFulfilled} ja · #{report.requirementsPartially} teilweise · #{report.requirementsNotFulfilled} nein · #{report.requirementsOpen} offen · #{report.requirementsDispensable} entbehrlich
+            tr
+              th Basis-Anforderungen
+              td= report.basicProtectionAchieved ? "alle erfüllt" : report.basicRequirementsOpen.to!string ~ " noch nicht erfüllt"
+            tr
+              th Risiken
+              td #{report.risksLow} gering · #{report.risksMedium} mittel · #{report.risksHigh} hoch · #{report.risksVeryHigh} sehr hoch (#{report.risksUntreated} unbehandelt)
+      p.small-text.muted JSON: /odata/v4/grundschutz/GetProjectReport(projectId='#{project.ID}')
+
+  //- ------------------------------------------------------------ settings
+  - if (tab == "settings" && ctx.canEdit)
+    article.round(style="max-width: 48rem")
+      form(method="post", action="/web/projects/#{project.ID}")
+        input(type="hidden", name="csrf", value=ctx.csrf)
+        input(type="hidden", name="tab", value="settings")
+        .field.label.border
+          input#ps-name(name="name", value=project.name, required, placeholder=" ")
+          label(for="ps-name") Name
+        .field.label.border.textarea
+          textarea#ps-scope(name="scope", placeholder=" ")= project.scope_
+          label(for="ps-scope") Informationsverbund / Geltungsbereich
+        .field.label.border.textarea
+          textarea#ps-desc(name="description", placeholder=" ")= project.description
+          label(for="ps-desc") Beschreibung
+        .field.label.border
+          input#ps-owner(name="owner", value=project.owner, placeholder=" ")
+          label(for="ps-owner") Verantwortlich (ISB)
+        .grid.no-space
+          .s12.m6
+            .field.label.suffix.border
+              select#ps-approach(name="approach")
+                - foreach (a; approaches)
+                  option(value=a, selected=(a == project.approach)) #{de(a)}-Absicherung
+              label(for="ps-approach") Vorgehensweise
+              i arrow_drop_down
+          .s12.m6
+            .field.label.suffix.border
+              select#ps-status(name="status")
+                - foreach (s; projectStatuses)
+                  option(value=s, selected=(s == project.status)) #{de(s)}
+              label(for="ps-status") Status
+              i arrow_drop_down
+        nav
+          button(type="submit")
+            i save
+            span Speichern
+      - if (ctx.isAdmin)
+        hr.large-margin
+        form(method="post", action="/web/projects/#{project.ID}/delete", hx-confirm="Projekt „#{project.name}“ mit allen Daten unwiderruflich löschen?")
+          input(type="hidden", name="csrf", value=ctx.csrf)
+          input(type="hidden", name="tab", value="settings")
+          button.error(type="submit")
+            i delete_forever
+            span Projekt löschen

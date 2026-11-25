@@ -1,0 +1,13 @@
+[
+  {
+    "ID": "4f0c6a8e-1f7a-4a50-9d7e-6c2f3c1b0a01",
+    "name": "ISMS Musterstadt",
+    "description": "Sicherheitskonzept der Stadtverwaltung",
+    "scope": "Rathaus, Bürgerbüro und Rechenzentrum",
+    "owner": "ISB M. Muster",
+    "approach": "standard",
+    "status": "inProgress",
+    "createdAt": "2026-01-15T09:00:00Z",
+    "modifiedAt": "2026-11-18T10:00:00Z"
+  }
+]

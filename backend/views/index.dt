@@ -1,0 +1,65 @@
+extends layout
+
+block content
+  - import uim.myfiori.presentation.web.helpers;
+  nav.bottom-margin
+    h5.max.no-margin Grundschutz-Projekte
+    - if (ctx.canEdit)
+      button(type="button", data-dialog="#new-project")
+        i add
+        span Neues Projekt
+
+  - if (projects.length == 0)
+    article.round
+      p Noch keine Projekte vorhanden. Legen Sie ein Projekt (Informationsverbund) an.
+
+  .grid
+    - foreach (i, p; projects)
+      - auto r = reports[i];
+      .s12.m6.l4
+        a.card-link(href="/web/projects/#{p.ID}")
+          article.round
+            nav
+              h6.max.no-margin #{p.name}
+              span(class=badge(p.status)) #{de(p.status)}
+            p.small-text.muted #{p.scope_}
+            .gap-row
+              span(class=chip) #{de(p.approach)}-Absicherung
+              span(class=chip) #{r.targetObjectCount} Zielobjekte
+              span(class=badge(r.protectionLevel)) Schutzbedarf #{de(r.protectionLevel)}
+            .top-margin
+              nav.small-text
+                span.max Erfüllungsgrad
+                span #{percent(r.complianceDegree)}
+              progress.max(value=r.complianceDegree, max="100")
+            - if (r.risksHigh + r.risksVeryHigh > 0)
+              p.small-text.error-text
+                i.small warning
+                |  #{r.risksHigh + r.risksVeryHigh} hohe/sehr hohe Risiken
+
+  - if (ctx.canEdit)
+    dialog#new-project
+      h5 Neues Grundschutz-Projekt
+      form(method="post", action="/web/projects")
+        input(type="hidden", name="csrf", value=ctx.csrf)
+        .field.label.border
+          input#np-name(name="name", required, maxlength="255", placeholder=" ")
+          label(for="np-name") Name *
+        .field.label.border.textarea
+          textarea#np-scope(name="scope", placeholder=" ")
+          label(for="np-scope") Informationsverbund / Geltungsbereich
+        .field.label.border.textarea
+          textarea#np-desc(name="description", placeholder=" ")
+          label(for="np-desc") Beschreibung
+        .field.label.border
+          input#np-owner(name="owner", placeholder=" ")
+          label(for="np-owner") Verantwortlich (ISB)
+        .field.label.suffix.border
+          select#np-approach(name="approach")
+            - foreach (a; approaches)
+              option(value=a, selected=(a == "standard")) #{de(a)}-Absicherung
+          label(for="np-approach") Vorgehensweise
+          i arrow_drop_down
+        nav.right-align
+          button.border(type="button", data-dialog="#new-project") Abbrechen
+          button(type="submit") Anlegen

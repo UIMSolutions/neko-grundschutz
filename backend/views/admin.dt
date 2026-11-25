@@ -1,0 +1,142 @@
+extends layout
+
+block content
+  - import uim.myfiori.presentation.web.helpers;
+  - import std.format : format;
+  h5.no-margin Daten &amp; Sicherung
+  p.small-text.muted Speicher: #{storage}
+
+  .grid
+    //- ------------------------------------------------------------ export
+    .s12.l6
+      article.round
+        h6
+          i download
+          |  Export
+        p.small-text Alle Datensätze einer Entität als CSV (Excel, UTF-8) oder JSON herunterladen.
+        .table-wrap
+          table.stripes
+            tbody
+              - foreach (e; entities)
+                tr
+                  td.mono #{e}
+                  td.right-align.nowrap
+                    a.button.border.small(href="/api/export/#{e}?format=csv", hx-boost="false", title="CSV mit Komma") CSV ,
+                    a.button.border.small(href="/api/export/#{e}?format=csv&delimiter=semicolon", hx-boost="false", title="CSV mit Semikolon (Excel DE)") CSV ;
+                    a.button.border.small(href="/api/export/#{e}?format=json", hx-boost="false") JSON
+
+    //- ------------------------------------------------------------ import
+    .s12.l6
+      article.round
+        h6
+          i upload
+          |  Import
+        - if (!ctx.canEdit)
+          p.small-text.muted Import erfordert die Rolle Bearbeiter.
+        - else
+          p.small-text Format wird erkannt (JSON oder CSV mit , ; oder Tab). Alle Geschäftsregeln werden geprüft; bei einem Fehler wird nichts importiert.
+          form(method="post", action="/web/import", enctype="multipart/form-data")
+            input(type="hidden", name="csrf", value=ctx.csrf)
+            .grid.no-space
+              .s6
+                .field.label.suffix.border.small
+                  select#imp-entity(name="entity")
+                    - foreach (e; importable)
+                      option(value=e) #{e}
+                  label(for="imp-entity") Entität
+                  i arrow_drop_down
+              .s6
+                .field.label.suffix.border.small(title="Verhalten bei vorhandener ID")
+                  select#imp-mode(name="mode")
+                    option(value="create", title="Fehler bei vorhandener ID") nur neue anlegen
+                    option(value="upsert") anlegen / aktualisieren
+                    option(value="skip") vorhandene überspringen
+                  label(for="imp-mode") Modus
+                  i arrow_drop_down
+            input.file(type="file", name="file", accept=".csv,.json,text/csv,application/json", required)
+            nav
+              label.checkbox.max
+                input(type="checkbox", name="dryRun")
+                span Probelauf (nur prüfen)
+              button.small(type="submit")
+                i upload
+                span Importieren
+          hr.medium-margin
+          h6.small Projekt importieren
+          p.small-text Projektdatei (Export eines Projekts inkl. Zielobjekte, Anforderungen und Risiken).
+          form(method="post", action="/web/import-project", enctype="multipart/form-data")
+            input(type="hidden", name="csrf", value=ctx.csrf)
+            input.file(type="file", name="file", accept=".json,application/json", required)
+            p
+              label.checkbox
+                input(type="checkbox", name="newIds")
+                span Als Kopie mit neuen IDs anlegen (z. B. aus einer Vorlage)
+            nav
+              label.checkbox.max
+                input(type="checkbox", name="dryRun")
+                span Probelauf (nur prüfen)
+              button.small(type="submit")
+                i upload_file
+                span Projekt importieren
+
+  //- ------------------------------------------------------------ backup & restore
+  article.round.top-margin
+    h6
+      i backup
+      |  Datensicherung &amp; Wiederherstellung
+    - if (!ctx.isAdmin)
+      article.tertiary-container.round.no-elevate Backup und Restore erfordern die Rolle Administrator.
+    - else
+      p.small-text Eine Sicherung enthält den vollständigen Datenbestand mit Prüfsumme (SHA-256). Vor jeder Wiederherstellung wird der aktuelle Stand automatisch gesichert. Benutzerkonten sind nicht Teil der Sicherung.
+      nav.wrap
+        a.button.small(href="/api/backup", hx-boost="false")
+          i download
+          span Komplettsicherung herunterladen
+        form(method="post", action="/web/backups")
+          input(type="hidden", name="csrf", value=ctx.csrf)
+          nav.no-space
+            .field.border.small.compact
+              input(name="label", placeholder="Bezeichnung (optional)", maxlength="32")
+            button.border.small(type="submit") Sicherung auf Server erstellen
+
+      hr.medium-margin
+      h6.small Aus Datei wiederherstellen
+      form(method="post", action="/web/restore", enctype="multipart/form-data")
+        input(type="hidden", name="csrf", value=ctx.csrf)
+        input.file(type="file", name="file", accept=".json,application/json", required)
+        nav.wrap
+          label.checkbox.max
+            input(type="checkbox", name="confirm")
+            span Bestätigen: aktuellen Datenbestand ersetzen
+          button.error.small(type="submit") Prüfen / Wiederherstellen
+
+      hr.medium-margin
+      h6.small Sicherungen auf dem Server
+      - if (backups.length == 0)
+        p.small-text Keine Sicherungen vorhanden.
+      - else
+        .table-wrap
+          table.stripes
+            thead
+              tr
+                th Datei
+                th Zeitpunkt
+                th.right-align Größe
+                th
+            tbody
+              - foreach (b; backups)
+                tr
+                  td.mono.small-text #{b.name}
+                  td.small-text #{b.createdAt}
+                  td.right-align.small-text #{format("%.1f KB", b.size / 1024.0)}
+                  td.right-align
+                    nav.right-align.no-space
+                      a.button.circle.transparent.small(href="/api/backups/#{b.name}", hx-boost="false", title="Herunterladen")
+                        i download
+                      form(method="post", action="/web/backups/#{b.name}/restore", hx-confirm="Diese Sicherung prüfen bzw. (falls bestätigt) den aktuellen Datenbestand ersetzen?")
+                        input(type="hidden", name="csrf", value=ctx.csrf)
+                        nav.no-space
+                          label.checkbox(title="Bestätigen")
+                            input(type="checkbox", name="confirm")
+                            span
+                          button.error.small(type="submit") Wiederherstellen

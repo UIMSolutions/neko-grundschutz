@@ -1,0 +1,40 @@
+extends layout
+
+block content
+  - import uim.myfiori.presentation.web.helpers;
+  h5.no-margin IT-Grundschutz-Kompendium
+  p.small-text.muted #{edition} – maßgeblich ist stets die aktuelle Edition des BSI.
+
+  .grid
+    .s12.l8
+      h6 Bausteine
+      - foreach (m; modules)
+        article.round.no-padding
+          details
+            summary.padding
+              nav
+                span.mono #{m.code}
+                span.max.bold #{m.title}
+                span(class=chip) #{m.requirementCount}
+                i.expand-icon expand_more
+            .padding
+              p.small-text.muted #{m.description}
+              .table-wrap
+                table.stripes
+                  tbody
+                    - foreach (r; requirementsByModule[m.code])
+                      tr
+                        td.mono.nowrap #{r.code}
+                        td #{r.title}
+                        td
+                          span(class=badge(r.level)) #{de(r.level)}
+    .s12.l4
+      h6 Elementare Gefährdungen
+      article.round
+        .table-wrap
+          table.stripes
+            tbody
+              - foreach (t; threats)
+                tr
+                  td.mono.nowrap #{t.code}
+                  td #{t.title}

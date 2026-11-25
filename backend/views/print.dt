@@ -1,0 +1,233 @@
+doctype html
+- import uim.myfiori.presentation.web.helpers;
+- import std.array : join;
+- import std.conv : to;
+- import uim.myfiori.domain.services.riskassessment : assessRisk;
+- import uim.myfiori.domain.enumerations : Frequency, Impact;
+- auto r = dossier.report;
+- auto p = r.project;
+html(lang="de")
+  head
+    meta(charset="utf-8")
+    title Sicherheitskonzept – #{p.name}
+    style.
+      @page { size: A4; margin: 18mm 15mm 20mm 15mm; }
+      * { box-sizing: border-box; }
+      body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 10pt; color: #1d2d3e; margin: 0; }
+      .sheet { max-width: 190mm; margin: 0 auto; padding: 8mm 0; }
+      h1 { font-size: 22pt; margin: 0 0 4mm; color: #0a6ed1; }
+      h2 { font-size: 14pt; border-bottom: 2px solid #0a6ed1; padding-bottom: 1mm; margin: 8mm 0 3mm; }
+      h3 { font-size: 11.5pt; margin: 6mm 0 2mm; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; page-break-inside: auto; }
+      th, td { border: 1px solid #c7d0d9; padding: 1.2mm 1.6mm; text-align: left; vertical-align: top; }
+      th { background: #eef3f8; font-weight: 600; }
+      tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
+      .kv th { width: 45mm; }
+      .muted { color: #5b6b7b; font-size: 8.5pt; }
+      .code { font-family: Consolas, "Courier New", monospace; white-space: nowrap; }
+      .cover { min-height: 230mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+      .cover .title { margin-top: 40mm; }
+      .cover .subtitle { font-size: 14pt; color: #5b6b7b; }
+      .chapter { page-break-before: always; }
+      .kpis { display: flex; gap: 3mm; margin-bottom: 4mm; }
+      .kpi { flex: 1; border: 1px solid #c7d0d9; border-radius: 2mm; padding: 2.5mm; }
+      .kpi .v { font-size: 16pt; font-weight: 700; }
+      .s-yes, .s-low, .s-normal, .s-dispensable { color: #107e3e; }
+      .s-partially, .s-medium, .s-high { color: #b35c00; font-weight: 600; }
+      .s-no, .s-veryHigh { color: #bb0000; font-weight: 700; }
+      .matrix td { text-align: center; width: 22mm; height: 9mm; font-weight: 700; }
+      .m-low { background: #e8f5e9; } .m-medium { background: #fff8e1; } .m-high { background: #ffe0b2; } .m-veryHigh { background: #ffcdd2; }
+      .signatures { display: flex; gap: 12mm; margin-top: 18mm; }
+      .signatures div { flex: 1; border-top: 1px solid #1d2d3e; padding-top: 1.5mm; font-size: 9pt; }
+      .toolbar { position: fixed; top: 4mm; right: 4mm; }
+      .toolbar button { font-size: 11pt; padding: 2mm 5mm; background: #0a6ed1; color: #fff; border: 0; border-radius: 1.5mm; cursor: pointer; }
+      @media print { .toolbar { display: none; } .sheet { padding: 0; } }
+  body
+    .toolbar
+      button(type="button", onclick="window.print()") Drucken
+    .sheet
+      //- ------------------------------------------------------------ cover
+      section.cover
+        .title
+          p.subtitle Sicherheitskonzept nach BSI IT-Grundschutz
+          h1 #{p.name}
+          p.subtitle #{de(p.approach)}-Absicherung · Status: #{de(p.status)}
+        table.kv
+          tbody
+            tr
+              th Informationsverbund
+              td #{p.scope_}
+            tr
+              th Beschreibung
+              td #{p.description}
+            tr
+              th Verantwortlich (ISB)
+              td #{p.owner}
+            tr
+              th Stand der Daten
+              td #{p.modifiedAt}
+            tr
+              th Erstellt am
+              td #{dossier.generatedAt}
+            tr
+              th Referenzkatalog
+              td #{dossier.catalogEdition}
+            tr
+              th Projekt-ID
+              td.code #{p.ID}
+
+      //- ------------------------------------------------------------ summary
+      section
+        h2 1 Management-Zusammenfassung
+        .kpis
+          .kpi
+            .muted Erfüllungsgrad
+            .v #{percent(r.complianceDegree)}
+          .kpi
+            .muted Schutzbedarf (Maximum)
+            .v(class="s-#{r.protectionLevel}") #{de(r.protectionLevel)}
+          .kpi
+            .muted Offene Basis-Anforderungen
+            .v #{r.basicRequirementsOpen}
+          .kpi
+            .muted Hohe / sehr hohe Risiken
+            .v #{r.risksHigh + r.risksVeryHigh}
+        table.kv
+          tbody
+            tr
+              th Zielobjekte
+              td #{r.targetObjectCount}
+            tr
+              th Schutzbedarf
+              td Vertraulichkeit #{de(r.confidentiality)} · Integrität #{de(r.integrity)} · Verfügbarkeit #{de(r.availability)}
+            tr
+              th Risikoanalyse erforderlich
+              td= r.objectsRequiringRiskAnalysis.length ? r.objectsRequiringRiskAnalysis.join(", ") : "–"
+            tr
+              th Anforderungen (relevant)
+              td #{r.requirementsTotal}: #{r.requirementsFulfilled} ja · #{r.requirementsPartially} teilweise · #{r.requirementsNotFulfilled} nein · #{r.requirementsOpen} offen · #{r.requirementsDispensable} entbehrlich
+            tr
+              th Basis-Absicherung
+              td= r.basicProtectionAchieved ? "erreicht – alle Basis-Anforderungen erfüllt" : "nicht erreicht – " ~ r.basicRequirementsOpen.to!string ~ " Basis-Anforderungen offen"
+            tr
+              th Risiken
+              td #{r.risksTotal} gesamt: #{r.risksLow} gering · #{r.risksMedium} mittel · #{r.risksHigh} hoch · #{r.risksVeryHigh} sehr hoch · #{r.risksUntreated} unbehandelt
+
+      //- ------------------------------------------------------------ structure & protection need
+      section.chapter
+        h2 2 Strukturanalyse und Schutzbedarfsfeststellung
+        - if (dossier.targetObjects.length == 0)
+          p Keine Zielobjekte erfasst.
+        - else
+          table
+            thead
+              tr
+                th Zielobjekt
+                th Typ
+                th V
+                th I
+                th A
+                th Max.
+                th Begründung
+            tbody
+              - foreach (o; dossier.targetObjects)
+                tr
+                  td
+                    strong #{o.name}
+                    - if (o.description.length)
+                      .muted #{o.description}
+                  td #{de(o.kind)}
+                  td(class="s-#{o.confidentiality}") #{de(o.confidentiality)}
+                  td(class="s-#{o.integrity}") #{de(o.integrity)}
+                  td(class="s-#{o.availability}") #{de(o.availability)}
+                  td(class="s-#{o.protectionLevel}") #{de(o.protectionLevel)}
+                  td #{o.protectionRationale}
+          p.muted Maximumprinzip: Der Schutzbedarf des Informationsverbunds ergibt sich aus dem jeweils höchsten Schutzbedarf der Zielobjekte.
+
+      //- ------------------------------------------------------------ check
+      section.chapter
+        h2 3 Modellierung und IT-Grundschutz-Check
+        - if (dossier.requirements.length == 0)
+          p Noch keine Bausteine modelliert.
+        - foreach (s; sections)
+          - if (s.requirements.length)
+            h3 #{s.object.name} (#{de(s.object.kind)})
+            table
+              thead
+                tr
+                  th Anforderung
+                  th Art
+                  th Umsetzung
+                  th Verantwortlich
+                  th Termin
+                  th Begründung / Umsetzung
+              tbody
+                - foreach (q; s.requirements)
+                  tr
+                    td
+                      .code #{q.code}
+                      | #{q.title}
+                    td #{de(q.level)}
+                    td(class="s-#{q.status}") #{de(q.status)}
+                    td #{q.responsible}
+                    td.code #{q.dueDate}
+                    td #{q.note}
+
+      //- ------------------------------------------------------------ risks
+      section.chapter
+        h2 4 Risikoanalyse (BSI-Standard 200-3)
+        h3 Risikomatrix (Anzahl Risiken)
+        table.matrix
+          thead
+            tr
+              th Schadenshöhe / Häufigkeit
+              - foreach (f; 1 .. 5)
+                th #{frequencyLabel(f)}
+          tbody
+            - foreach_reverse (i; 0 .. 4)
+              tr
+                th #{impactLabel(i + 1)}
+                - foreach (j; 0 .. 4)
+                  - auto cellLevel = assessRisk(cast(Frequency) (j + 1), cast(Impact) (i + 1)).to!string;
+                  td(class="m-#{cellLevel}")= matrix[i][j] ? matrix[i][j].to!string : ""
+        - if (dossier.risks.length == 0)
+          p Keine Risiken erfasst.
+        - else
+          h3 Risiken und Risikobehandlung
+          table
+            thead
+              tr
+                th Zielobjekt
+                th Gefährdung
+                th H / S
+                th Risiko
+                th Behandlung
+                th Begründung / Maßnahme
+            tbody
+              - foreach (s; sections)
+                - foreach (k; s.risks)
+                  tr
+                    td #{s.object.name}
+                    td
+                      .code #{k.threatCode}
+                      | #{k.title}
+                      - if (k.description.length)
+                        .muted #{k.description}
+                    td #{frequencyLabel(k.frequency)} / #{impactLabel(k.impact)}
+                    td(class="s-#{k.level}") #{de(k.level)}
+                    td #{de(k.treatment)}
+                    td #{k.treatmentNote}
+
+      //- ------------------------------------------------------------ approval
+      section
+        h2 5 Freigabe
+        p Das Sicherheitskonzept wurde geprüft und zur Umsetzung freigegeben. Akzeptierte Restrisiken sind in Kapitel 4 dokumentiert.
+        .signatures
+          div Ort, Datum
+          div Informationssicherheitsbeauftragte/r
+          div Leitung der Institution
+        p.muted Erstellt mit grundschutz · #{dossier.generatedAt}
+    - if (autoPrint)
+      script.
+        window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 300); });
